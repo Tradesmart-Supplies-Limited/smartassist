@@ -32,6 +32,16 @@ The sample PDF IS the template. Never redraw lines or logos. With PyMuPDF:
 The fields live in one table module (`core\layout.py`). At load time every old text must be found at its
 spot, otherwise show a clear "sample does not match" error.
 
+Things learned while building:
+- The sample's own font is Inter; replaced values are written in Arial as planned.
+- Arial maps "-" and the soft hyphen (and space / no-break space) to one glyph, so text read back wrong.
+  `pdf_builder.py` uses an in-memory Arial copy with U+00AD and U+00A0 removed (fonttools).
+- Private values (driver, passport, horse, trailers) are NOT written in `layout.py`. For those the load
+  check only requires the sample to show the same value at every spot of that field.
+- The Excel also has a "Trailer2 Reg" column; "N/A" or empty becomes "NIL".
+- Unreadable "No. of packages" is an error too (the truck is skipped).
+- Dates use a two-digit day: "05-Oct-26".
+
 ## Fields replaced
 - Page 1: manifest no. and file ref (both = invoice no.), loaded date, package count, quantity "40.00 MT",
   exit border, horse, trailer 1, trailer 2 ("NIL" if none), driver, passport.

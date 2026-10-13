@@ -205,10 +205,7 @@ def fitted_size(font, text, size, max_width):
 def build_pdf(template, values):
     """Write one truck's values into the template. Returns the PDF as bytes."""
     doc = pymupdf.open(stream=template["base"], filetype="pdf")
-    for page in doc:
-        for f in FONTS.values():
-            if f["data"]:
-                page.insert_font(fontname=f["name"], fontbuffer=f["data"])
+    ready = set()                 # (page, bold) pairs whose font is already on the page
     for spot in template["spots"]:
         text = values[spot["key"]] + spot["suffix"]
         if not text.strip():
@@ -217,7 +214,11 @@ def build_pdf(template, values):
         size = fitted_size(f["font"], text, spot["size"], spot["max_width"])
         width = f["font"].text_length(text, fontsize=size)
         x = spot["right"] - width if spot["align"] == "right" else spot["centre"] - width / 2
-        doc[spot["page"]].insert_text(
+        page = doc[spot["page"]]
+        if f["data"] and (spot["page"], spot["bold"]) not in ready:
+            page.insert_font(fontname=f["name"], fontbuffer=f["data"])
+            ready.add((spot["page"], spot["bold"]))
+        page.insert_text(
             (x, spot["baseline"]), text,
             fontname=f["name"], fontsize=size, color=spot["colour"],
         )
