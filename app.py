@@ -1,5 +1,6 @@
 """DocuLoop: one 3-page PDF per truck, made from the sample PDF and the loading-order Excel."""
 import io
+import os
 import re
 import zipfile
 from datetime import date
@@ -8,13 +9,15 @@ from decimal import Decimal
 import pandas as pd
 import streamlit as st
 
-from core import layout
+from core import instructions as ins
+from core import layout, llm
 from core.excel_reader import clean_sheet, detect_header_row, read_raw_sheets
 from core.pdf_builder import (LayoutError, build_pdf, document_values, format_date,
                               load_template, pymupdf, two_decimals)
-from core.trucks import FIELDS, OPTIONAL, check_trucks, guess_columns, read_trucks
+from core.trucks import FIELDS, OPTIONAL, cell_text, check_trucks, guess_columns, read_trucks, simplify
 
 NO_COLUMN = "(none)"
+LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "instructions_log.csv")
 
 st.set_page_config(page_title="DocuLoop", layout="wide")
 st.title("DocuLoop")
@@ -94,48 +97,155 @@ if missing:
 
 # ---------------- Step 3: job details ----------------
 st.header("Step 3: Job details")
-c1, c2, c3 = st.columns(3)
-doc_date = c1.date_input("Date on the documents", value=date.today(), format="DD/MM/YYYY")
-date_text = format_date(doc_date)
-c1.caption(f"Will be written as {date_text}")
-freight1 = c2.text_input("Freight line 1 wording", value=layout.DEFAULT_FREIGHT1).strip()
-freight2 = c3.text_input("Freight line 2 wording", value=layout.DEFAULT_FREIGHT2).strip()
 
-st.subheader("Prices (USD per MT)")
-price_labels = {"coal": "Coal", "freight1": "Freight line 1", "freight2": "Freight line 2",
-                "insurance": "Insurance"}
-prices = {}
-for col, (name, label) in zip(st.columns(4), price_labels.items()):
-    typed = col.number_input(label, min_value=0.0, value=float(layout.DEFAULT_PRICES[name]),
-                             step=1.0, format="%.2f", key=f"price_{name}")
-    prices[name] = Decimal(f"{typed:.2f}")
-
-st.subheader("Quantities")
-source = st.radio("Where do the tonnage and number of packages come from?",
-                  ["From the Excel (each truck's own figures)", "Fixed figures for every truck"],
-                  key="source")
-from_excel = source.startswith("From the Excel")
-fixed_tonnage = fixed_packages = None
-if not from_excel:
-    f1, f2, _ = st.columns(3)
-    fixed_tonnage = Decimal(f"{f1.number_input('Tonnage (MT) for every truck', min_value=0.01, value=40.0, step=0.5, format='%.2f'):.2f}")
-    fixed_packages = Decimal(int(f2.number_input("Packages for every truck", min_value=1, value=40, step=1)))
-
-# ---------------- Data check ----------------
-st.subheader("Data check")
+# Trucks are read here already, so that typed orders can find them.
 trucks = read_trucks(table, mapping, int(header_row))
-check_trucks(trucks, figures_from_excel=from_excel)
 if not trucks:
     st.warning("No trucks were found in this sheet. Check the title row and the column matching.")
     st.stop()
+sn_column = next((c for c in columns if simplify(c) in ("sn", "serialno", "serialnumber")), None)
 
-jobs = []       # (file name, values) for every truck that can be made
+
+def serial_no(truck):
+    """The truck's S/N from the Excel ('' if the sheet has no S/N column)."""
+    return cell_text(table.iloc[truck.row - int(header_row) - 2][sn_column]) if sn_column else ""
+
+
+truck_refs = [{"row": t.row, "sn": serial_no(t), "invoice_no": t.invoice_no, "horse": t.horse,
+               "driver": t.driver} for t in trucks]
+
+# A different Excel (or sheet, or title row) means earlier truck orders no longer apply.
+xl_id = (xl_file.name, xl_file.size, sheet_name, int(header_row))
+if st.session_state.get("xl_id") != xl_id:
+    st.session_state.xl_id = xl_id
+    for key in (ins.KEY_EXCLUDED, ins.KEY_ONLY, ins.KEY_ACTIVE, "pending"):
+        st.session_state.pop(key, None)
+
+# Every Step 3 setting has a key, so an applied order can change it. These are the defaults.
+DEFAULTS = {
+    ins.KEY_DATE: date.today(),
+    ins.KEY_LABELS["freight_1"]: layout.DEFAULT_FREIGHT1,
+    ins.KEY_LABELS["freight_2"]: layout.DEFAULT_FREIGHT2,
+    ins.KEY_SOURCE: ins.SOURCE_EXCEL,
+    ins.KEY_TONNAGE: 40.0,
+    ins.KEY_PACKAGES: 40,
+}
+PRICE_NAMES = {"coal": "coal", "freight_1": "freight1", "freight_2": "freight2", "insurance": "insurance"}
+for item, name in PRICE_NAMES.items():
+    DEFAULTS[ins.KEY_PRICES[item]] = float(layout.DEFAULT_PRICES[name])
+for key, value in DEFAULTS.items():
+    st.session_state.setdefault(key, value)
+
+
+def apply_pending():
+    """Apply button: write the understood order into the settings, then log it."""
+    pending = st.session_state.pop("pending")
+    ins.apply_plan(pending["plan"], st.session_state)
+    ins.log_instruction(LOG_PATH, pending["text"], pending["plan"]["actions"], True)
+    st.session_state.instruction_text = ""
+
+
+def discard_pending():
+    """Discard button: change nothing, only log it."""
+    pending = st.session_state.pop("pending")
+    ins.log_instruction(LOG_PATH, pending["text"], pending["plan"]["actions"], False)
+
+
+def clear_instructions():
+    """Back to the default settings, with no truck excluded."""
+    for key, value in DEFAULTS.items():
+        st.session_state[key] = value
+    for key in (ins.KEY_EXCLUDED, ins.KEY_ONLY, ins.KEY_ACTIVE):
+        st.session_state.pop(key, None)
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def reader_status():
+    """Is Ollama there? Checked at most once a minute (the check is slow when Ollama is off)."""
+    return llm.status()
+
+
+def md(text):
+    """Show $ signs as $ (Streamlit would otherwise read them as maths)."""
+    return text.replace("$", "\\$")
+
+
+st.subheader("Instructions (optional)")
+reader_ok, reader_message = reader_status()
+if reader_ok:
+    st.caption(reader_message + " Orders change the settings below only after you click Apply.")
+    st.text_area("Type an order in plain English", key="instruction_text",
+                 placeholder="e.g. skip truck 3 · coal is 75 · date them 15 October · only trucks 1 to 5")
+    if st.button("Read instruction", key="read_instruction", disabled="pending" in st.session_state):
+        typed = st.session_state.instruction_text.strip()
+        if typed:
+            with st.spinner("Reading the order... the first one can take up to a minute while the model loads."):
+                try:
+                    plan = ins.read_order(typed, truck_refs, date.today(), llm.chat)
+                    st.session_state.pending = {"text": typed, "plan": plan}
+                except (llm.LLMError, ins.InvalidReply) as error:
+                    st.warning(f"The order could not be read. {error} Use the settings below by hand.")
+else:
+    st.info(reader_message)
+
+pending = st.session_state.get("pending")
+if pending:
+    with st.container(border=True):
+        st.markdown(md(f"**Your order:** {pending['text']}"))
+        understood = pending["plan"]["understood"]
+        st.markdown("**Understood as:**" + ("" if understood else " nothing that can be applied."))
+        for item in understood:
+            st.markdown(md(f"- {item['say']}"))
+        if pending["plan"]["not_done"]:
+            st.markdown("**Not done:**")
+            for reason in pending["plan"]["not_done"]:
+                st.markdown(md(f"- {reason}"))
+        b1, b2, _ = st.columns([1, 1, 4])
+        b1.button("Apply", type="primary", key="apply_instruction", on_click=apply_pending,
+                  disabled=not understood)
+        b2.button("Discard", key="discard_instruction", on_click=discard_pending)
+
+st.subheader("Date and freight wording")
+c1, c2, c3 = st.columns(3)
+doc_date = c1.date_input("Date on the documents", format="DD/MM/YYYY", key=ins.KEY_DATE)
+date_text = format_date(doc_date)
+c1.caption(f"Will be written as {date_text}")
+freight1 = c2.text_input("Freight line 1 wording", key=ins.KEY_LABELS["freight_1"]).strip()
+freight2 = c3.text_input("Freight line 2 wording", key=ins.KEY_LABELS["freight_2"]).strip()
+
+st.subheader("Prices (USD per MT)")
+prices = {}
+for col, (item, name) in zip(st.columns(4), PRICE_NAMES.items()):
+    typed_price = col.number_input(ins.ITEM_NAMES[item], min_value=0.0, step=1.0, format="%.2f",
+                                   key=ins.KEY_PRICES[item])
+    prices[name] = Decimal(f"{typed_price:.2f}")
+
+st.subheader("Quantities")
+source = st.radio("Where do the tonnage and number of packages come from?",
+                  [ins.SOURCE_EXCEL, ins.SOURCE_FIXED], key=ins.KEY_SOURCE)
+from_excel = source == ins.SOURCE_EXCEL
+fixed_tonnage = fixed_packages = None
+if not from_excel:
+    f1, f2, _ = st.columns(3)
+    fixed_tonnage = Decimal(f"{f1.number_input('Tonnage (MT) for every truck', min_value=0.01, step=0.5, format='%.2f', key=ins.KEY_TONNAGE):.2f}")
+    fixed_packages = Decimal(int(f2.number_input("Packages for every truck", min_value=1, step=1,
+                                                 key=ins.KEY_PACKAGES)))
+
+# ---------------- Data check ----------------
+st.subheader("Data check")
+check_trucks(trucks, figures_from_excel=from_excel)
+excluded_rows = set(st.session_state.get(ins.KEY_EXCLUDED, []))
+only_rows = st.session_state.get(ins.KEY_ONLY)
+
+jobs = []       # (file name, values) for every truck that will be made
 rows = []       # the table shown to the manager
 for truck in trucks:
     tonnage = truck.tonnage if from_excel else fixed_tonnage
     packages = truck.packages if from_excel else fixed_packages
     total = ""
-    if truck.errors:
+    if truck.row in excluded_rows or (only_rows and truck.row not in only_rows):
+        status = "Excluded by instruction"
+    elif truck.errors:
         status = "SKIPPED: " + "; ".join(truck.errors)
     else:
         values = document_values(truck, tonnage, packages, date_text, prices, freight1, freight2)
@@ -144,18 +254,21 @@ for truck in trucks:
         total = values["total"]
         status = "Warning: " + "; ".join(truck.warnings) if truck.warnings else "OK"
     rows.append({
-        "Excel row": truck.row, "Invoice No.": truck.invoice_no, "Driver": truck.driver,
-        "Passport": truck.passport, "Horse": truck.horse, "Trailer 1": truck.trailer1,
-        "Trailer 2": truck.trailer2, "Border": truck.border,
+        "Excel row": truck.row, "S/N": serial_no(truck), "Invoice No.": truck.invoice_no,
+        "Driver": truck.driver, "Passport": truck.passport, "Horse": truck.horse,
+        "Trailer 1": truck.trailer1, "Trailer 2": truck.trailer2, "Border": truck.border,
         "Tonnage": two_decimals(tonnage) if tonnage is not None else truck.tonnage_text,
         "Packages": str(packages) if packages is not None else truck.packages_text,
         "Invoice total": total, "Status": status,
     })
 st.dataframe(pd.DataFrame(rows), hide_index=True)
 
-skipped = sum(1 for t in trucks if t.errors)
-warned = sum(1 for t in trucks if t.warnings and not t.errors)
-st.write(f"**{len(jobs)} trucks ready**, {warned} with warnings, {skipped} skipped because of errors.")
+statuses = [r["Status"] for r in rows]
+skipped = sum(s.startswith("SKIPPED") for s in statuses)
+warned = sum(s.startswith("Warning") for s in statuses)
+excluded = statuses.count("Excluded by instruction")
+st.write(f"**{len(jobs)} trucks ready**, {warned} with warnings, {skipped} skipped because of errors, "
+         f"{excluded} excluded by instruction.")
 if skipped:
     st.error("Skipped trucks get no PDF. Correct them in the Excel and upload it again.")
 
@@ -171,6 +284,14 @@ if from_excel:
 
 # ---------------- Step 4: generate ----------------
 st.header("Step 4: Generate")
+active = st.session_state.get(ins.KEY_ACTIVE, [])
+if active:
+    with st.container(border=True):
+        st.markdown("**Active changes from instructions:**")
+        for line in active:
+            st.markdown(md(f"- {line}"))
+        st.button("Clear all instructions (back to the default settings)", key="clear_instructions",
+                  on_click=clear_instructions)
 if st.button("Generate PDFs", type="primary", disabled=not jobs):
     bar = st.progress(0.0, text="Starting...")
     files = []
