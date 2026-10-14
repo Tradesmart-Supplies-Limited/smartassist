@@ -171,7 +171,7 @@ for key, value in DEFAULTS.items():
     st.session_state.setdefault(key, value)
 
 # Example orders shown as chips; clicking one fills the order box (it is not applied).
-EXAMPLES = ["Coal price is 75", "Only make trucks 1 to 5"]
+EXAMPLES = ["Coal price is 75"]
 
 
 def apply_pending():
@@ -214,7 +214,7 @@ with step3_card:
             st.caption(reader_message + " Orders change the settings below only after you click Apply.")
             bar, button = st.columns([5, 1], vertical_alignment="bottom")
             bar.text_area("Type an order in plain English", key="instruction_text", height=68,
-                          placeholder="e.g. skip truck 3 · coal is 75 · date them 15 October · only trucks 1 to 5")
+                          placeholder="e.g. coal is 75")
             read_clicked = button.button("Read instruction", key="read_instruction", type="primary",
                                          icon=":material/send:", disabled="pending" in st.session_state)
             chips = st.columns(len(EXAMPLES) + 2)
