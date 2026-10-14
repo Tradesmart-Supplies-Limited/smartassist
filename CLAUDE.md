@@ -62,6 +62,27 @@ Things learned while building:
 - Validation: empty invoice no./driver/horse, unreadable tonnage, duplicate invoice no. = error (truck
   skipped); duplicate horse, empty passport/border = warning.
 
+## Typed instructions (Step 3, optional)
+- Files: `core\instructions.py` (schema, prompt, validation, truck/date lookup, limits, apply, log),
+  `core\llm.py` (Ollama client; `OLLAMA_URL` and `MODEL` live only there), the box in `app.py`.
+- Hard rules: orders change Step 3 settings and truck selection only, never a figure inside a document
+  and never a figure for one truck. Nothing changes before Apply. The page must work without Ollama.
+  No new dependencies (urllib only). Never install Ollama or download models without asking.
+- Flat JSON schema sent as `format` to `/api/chat` (temperature 0, num_ctx 4096, num_predict 600,
+  keep_alive 2m, timeout 120 s). Default model `llama3.2:3b`; never qwen2.5:3b (licence).
+- Code, not the model, finds trucks (invoice no., invoice ending, S/N, horse, driver; unique only;
+  ranges on S/N), reads dates (English month table), and checks limits.
+- Typed-words check: every action needs its own words in the typed order, and every truck, number,
+  date and wording must appear in it. This is what keeps unsupported orders from being applied.
+- S/N is read in `app.py` (S/N column) and passed in truck refs; `core\trucks.py` is unchanged.
+- Settings use session_state keys from `core\instructions.py`; Apply/Discard/Clear are on_click callbacks.
+- Log: `output\instructions_log.csv` (git-ignored).
+- Tests: `tests\test_instructions.py`, `tests\test_llm.py` (no Ollama), 25 cases in
+  `tests\instruction_cases.json`. Never edit the cases to make the model pass.
+- Benchmark (needs Ollama): `.venv\Scripts\python tests\benchmark_instructions.py`.
+  On 2026-10-14: 24/25 right, 5/5 unsupported not applied, about 7 s per order (first 15-30 s).
+  Known miss: "Only do <invoice>" is read as exclude by the model and refused by code.
+
 ## Streamlit notes
 - No `use_container_width`. Keep results in `st.session_state`. Every download button needs a unique key.
 
