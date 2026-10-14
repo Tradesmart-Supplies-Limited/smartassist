@@ -40,6 +40,19 @@ If step 3 says "running scripts is disabled", use this instead of steps 3-4:
 4. **Generate.** Click "Generate PDFs". Then download everything as one ZIP, or one truck at a
    time. Use the preview to look at any truck before you send it.
 
+## Inspection reports (optional)
+After **Generate PDFs**, scroll to **Inspection reports (optional)** and upload one inspection report
+PDF per truck (you can select several files at once). If you upload nothing, nothing changes.
+- Files are matched to trucks by the **invoice number** in the file name (e.g. `YS-BMS10-288 inspection.pdf`),
+  otherwise by the **horse plate**. Capitals, spaces, `-` and `_` do not matter.
+- The table shows each truck as **Matched**, **Manual** (you chose the file) or **Missing**, with a line
+  such as "12 of 14 trucks have a report. 2 missing." A truck without a report is still made normally.
+- Files that fit no truck, or two trucks, appear under "Assign the remaining files by hand".
+- **What to include** decides the ZIP: documents only; documents + report as separate files; or one
+  combined PDF per truck (the 3 pages, then the report). The ZIP has one folder per truck.
+- **Download per truck** offers the documents, the inspection report and the combined PDF.
+- Reports are never changed: their pages are copied as they are. Loading a new Excel clears them.
+
 ## DRC clearance agent
 The agent on the road manifest follows each truck's EXIT BORDER in the Excel:
 - **Mokambo:** Contact person Pacafic, mobile +243 995 527 463

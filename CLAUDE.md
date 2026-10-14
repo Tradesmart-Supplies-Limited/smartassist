@@ -90,6 +90,16 @@ Things learned while building:
   On 2026-10-14: 24/25 right, 5/5 unsupported not applied, about 7 s per order (first 15-30 s).
   Known miss: "Only do <invoice>" is read as exclude by the model and refused by code.
 
+## Inspection reports (optional)
+- `core\inspection.py` (no Streamlit): `match_reports` (invoice no. in the file name, then horse plate;
+  ignores case, spaces, '-', '_'; digits must not touch, so 288 is not 2880; a file fitting two trucks or
+  two files for one truck go to manual assignment), `validate_report`, `combine` (3 pages then the report,
+  report pages copied unchanged, no font subsetting on them), `build_zip` (one folder per truck).
+- `app.py`: section after Generate. Hidden extras when nothing is uploaded. Reports in
+  `st.session_state["reports"]` keyed by invoice no.; cleared on a new Excel (uploader key changes).
+  The original ZIP and per-truck buttons stay as they were. No logging (only instructions are logged).
+- Tests: `tests\test_inspection.py`.
+
 ## Streamlit notes
 - No `use_container_width`. Keep results in `st.session_state`. Every download button needs a unique key.
 
