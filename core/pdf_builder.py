@@ -74,8 +74,20 @@ def amount(tonnage, price):
     return (Decimal(tonnage) * Decimal(price)).quantize(CENT, rounding=ROUND_HALF_UP)
 
 
-def document_values(truck, tonnage, packages, date_text, prices, freight1, freight2):
-    """Every text that goes into one truck's PDF, as {key: text}."""
+def agent_for_border(border):
+    """The DRC clearance agent for an exit border, or None if the border is not known."""
+    return layout.AGENTS.get(" ".join(str(border).split()).upper())
+
+
+def document_values(truck, tonnage, packages, date_text, prices, freight1, freight2, agent=None):
+    """Every text that goes into one truck's PDF, as {key: text}.
+
+    agent: the clearance agent ({"name", "mobile"}). If not given, it follows the truck's exit border;
+    a border without a known agent must be confirmed by the manager first (the app asks).
+    """
+    agent = agent or agent_for_border(truck.border)
+    if agent is None:
+        raise ValueError(f"No clearance agent is known for exit border '{truck.border}'.")
     amounts = {name: amount(tonnage, price) for name, price in prices.items()}
     total = sum(amounts.values(), Decimal("0"))
     quantity = two_decimals(tonnage) + " MT"
@@ -95,6 +107,8 @@ def document_values(truck, tonnage, packages, date_text, prices, freight1, freig
         "freight1_text": freight1,
         "freight2_text": freight2,
         "total": "$" + two_decimals(total),
+        "agent_contact": "Contact person :" + agent["name"],
+        "agent_mobile": "Mobile :" + agent["mobile"],
     }
     for name in prices:
         values["price_" + name] = "$" + two_decimals(prices[name])

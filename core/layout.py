@@ -24,6 +24,8 @@ SPOTS = [
     (0, 447.2, 397.3, "trailer2", "centre"),
     (0, 579.8, 397.3, "driver", "centre"),
     (0, 713.6, 397.3, "passport", "centre"),
+    (0, 603.4, 308.3, "agent_contact", "centre"),   # DRC clearance agent, chosen by exit border
+    (0, 598.4, 320.3, "agent_mobile", "centre"),
     # ---- Page 2: COMMERCIAL INVOICE ----
     (1, 328.1, 210.4, "date", "centre"),
     (1, 619.1, 210.4, "invoice_no", "centre"),
@@ -87,6 +89,16 @@ SAMPLE_VALUES = {
     "amount_insurance": "$80.00",
     "total": "$12,000.00",
     "weight": "40MT",
+    "agent_contact": "Contact person :Pacafic",
+    "agent_mobile": "Mobile :+243 995 527 463",
+}
+
+# DRC clearance agent per exit border (border written in capitals, as in the Excel).
+# These two business contacts are allowed in git on the owner's request (2026-10-14).
+# A border not listed here must be confirmed by the manager in the app before its PDFs are made.
+AGENTS = {
+    "MOKAMBO": {"name": "Pacafic", "mobile": "+243 995 527 463"},
+    "SAKANIA": {"name": "Oscar Levite", "mobile": "+243 997 595 381"},
 }
 
 # The sample's own figures as numbers (used for the "differs from the Excel" notice).

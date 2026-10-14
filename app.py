@@ -12,7 +12,7 @@ import streamlit as st
 from core import instructions as ins
 from core import layout, llm
 from core.excel_reader import clean_sheet, detect_header_row, read_raw_sheets
-from core.pdf_builder import (LayoutError, build_pdf, document_values, format_date,
+from core.pdf_builder import (LayoutError, agent_for_border, build_pdf, document_values, format_date,
                               load_template, pymupdf, two_decimals)
 from core.trucks import FIELDS, OPTIONAL, cell_text, check_trucks, guess_columns, read_trucks, simplify
 
@@ -237,18 +237,43 @@ check_trucks(trucks, figures_from_excel=from_excel)
 excluded_rows = set(st.session_state.get(ins.KEY_EXCLUDED, []))
 only_rows = st.session_state.get(ins.KEY_ONLY)
 
+
+def left_out(truck):
+    return truck.row in excluded_rows or bool(only_rows and truck.row not in only_rows)
+
+
+# The DRC clearance agent follows the exit border. For any other border the manager must
+# choose the agent here; until then those trucks wait and get no PDF.
+AGENT_CHOICES = {f"{a['name']} ({a['mobile']}), as for {border.title()}": a for border, a in layout.AGENTS.items()}
+CHOOSE = "(choose the agent)"
+confirmed_agents = {}
+unknown_borders = sorted({t.border for t in trucks
+                          if not t.errors and not left_out(t) and agent_for_border(t.border) is None})
+if unknown_borders:
+    with st.container(border=True):
+        st.warning("Please confirm the DRC clearance agent: these exit borders have no agent on file. "
+                   "Choose one for each border, or correct the border in the Excel.")
+        for border in unknown_borders:
+            pick = st.selectbox(f"Clearance agent for exit border '{border or '(empty)'}'",
+                                [CHOOSE] + list(AGENT_CHOICES), key=f"agent_for_{border}")
+            if pick != CHOOSE:
+                confirmed_agents[border] = AGENT_CHOICES[pick]
+
 jobs = []       # (file name, values) for every truck that will be made
 rows = []       # the table shown to the manager
 for truck in trucks:
     tonnage = truck.tonnage if from_excel else fixed_tonnage
     packages = truck.packages if from_excel else fixed_packages
     total = ""
-    if truck.row in excluded_rows or (only_rows and truck.row not in only_rows):
+    agent = agent_for_border(truck.border) or confirmed_agents.get(truck.border)
+    if left_out(truck):
         status = "Excluded by instruction"
     elif truck.errors:
         status = "SKIPPED: " + "; ".join(truck.errors)
+    elif agent is None:
+        status = "WAITING: confirm the clearance agent above"
     else:
-        values = document_values(truck, tonnage, packages, date_text, prices, freight1, freight2)
+        values = document_values(truck, tonnage, packages, date_text, prices, freight1, freight2, agent)
         file_name = re.sub(r"[^A-Za-z0-9._-]", "_", truck.invoice_no) + ".pdf"
         jobs.append((file_name, values))
         total = values["total"]
@@ -257,6 +282,7 @@ for truck in trucks:
         "Excel row": truck.row, "S/N": serial_no(truck), "Invoice No.": truck.invoice_no,
         "Driver": truck.driver, "Passport": truck.passport, "Horse": truck.horse,
         "Trailer 1": truck.trailer1, "Trailer 2": truck.trailer2, "Border": truck.border,
+        "Clearance agent": agent["name"] if agent else "",
         "Tonnage": two_decimals(tonnage) if tonnage is not None else truck.tonnage_text,
         "Packages": str(packages) if packages is not None else truck.packages_text,
         "Invoice total": total, "Status": status,
@@ -267,8 +293,9 @@ statuses = [r["Status"] for r in rows]
 skipped = sum(s.startswith("SKIPPED") for s in statuses)
 warned = sum(s.startswith("Warning") for s in statuses)
 excluded = statuses.count("Excluded by instruction")
+waiting = sum(s.startswith("WAITING") for s in statuses)
 st.write(f"**{len(jobs)} trucks ready**, {warned} with warnings, {skipped} skipped because of errors, "
-         f"{excluded} excluded by instruction.")
+         f"{excluded} excluded by instruction, {waiting} waiting for the clearance agent.")
 if skipped:
     st.error("Skipped trucks get no PDF. Correct them in the Excel and upload it again.")
 

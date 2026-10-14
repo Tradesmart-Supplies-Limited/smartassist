@@ -8,8 +8,8 @@ import pytest
 
 from core import layout
 from core.excel_reader import clean_sheet, detect_header_row, read_raw_sheets
-from core.pdf_builder import (LayoutError, build_pdf, document_values, format_date,
-                              load_template, pymupdf)
+from core.pdf_builder import (LayoutError, agent_for_border, build_pdf, document_values,
+                              format_date, load_template, pymupdf)
 from core.trucks import Truck, check_trucks, guess_columns, read_trucks
 
 
@@ -23,7 +23,7 @@ def values_for(truck, tonnage, packages=Decimal("40")):
 
 
 TRUCK = Truck(row=6, invoice_no="XX-TEST-001", driver="JOHN TEST", passport="P0000001",
-              horse="HRS001ZM", trailer1="TRL001ZM", trailer2="NIL", border="BORDERTOWN")
+              horse="HRS001ZM", trailer1="TRL001ZM", trailer2="NIL", border="Sakania")
 
 
 @pytest.mark.parametrize("tonnage, total", [("40", "$12,000.00"), ("42", "$12,600.00"),
@@ -83,7 +83,8 @@ def test_long_values_stay_inside_their_cells(template):
                        trailer2="TRL0000002ZM", border="A VERY LONG BORDER NAME")
     values = document_values(long_truck, Decimal("42.5"), Decimal("1000"), "12-Oct-26",
                              layout.DEFAULT_PRICES, "Road freight outside DRC with extra long wording",
-                             "Road freight inside DRC with extra long wording")
+                             "Road freight inside DRC with extra long wording",
+                             agent={"name": "A VERY LONG AGENT NAME FOR TESTING", "mobile": "+000 000 000 000 000"})
     doc = pymupdf.open(stream=build_pdf(template, values), filetype="pdf")
     for spot in template["spots"]:
         text = values[spot["key"]]
@@ -104,7 +105,7 @@ def test_sixty_trucks_in_under_sixty_seconds(template, tmp_path):
                   "Tonnage", "No. OF PACKAGES", "ETA", "INVOICE No.", "EXIT BORDER"])
     for n in range(1, 61):
         sheet.append([n, n, f"DRIVER NUMBER {n}", f"P{n:07d}", f"HRS{n:03d}ZM", f"TRL{n:03d}ZM", "000",
-                      "BAGGED COAL", "42T", 29, None, f"XX-TEST-{n:03d}", "BORDERTOWN"])
+                      "BAGGED COAL", "42T", 29, None, f"XX-TEST-{n:03d}", "MOKAMBO"])
     path = tmp_path / "sixty.xlsx"
     book.save(path)
 
@@ -122,3 +123,21 @@ def test_sixty_trucks_in_under_sixty_seconds(template, tmp_path):
     for pdf in pdfs:
         assert len(pymupdf.open(stream=pdf, filetype="pdf")) == 3
         assert len(pdf) < 300_000
+
+
+def test_clearance_agent_follows_the_exit_border(template):
+    assert agent_for_border(" mokambo ")["name"] == "Pacafic"
+    assert agent_for_border("SAKANIA")["name"] == "Oscar Levite"
+    assert agent_for_border("KASUMBALESA") is None
+    text = pymupdf.open(stream=build_pdf(template, values_for(TRUCK, "40")), filetype="pdf")[0].get_text()
+    assert "Contact person :Oscar Levite" in text and "Mobile :+243 997 595 381" in text
+    assert "Pacafic" not in text
+
+
+def test_unknown_border_needs_a_confirmed_agent():
+    other = Truck(row=6, invoice_no="XX-TEST-002", driver="JOHN TEST", horse="H", border="KASUMBALESA")
+    with pytest.raises(ValueError):
+        values_for(other, "40")
+    chosen = document_values(other, Decimal("40"), Decimal("40"), "12-Oct-26", layout.DEFAULT_PRICES,
+                             "a", "b", agent=layout.AGENTS["MOKAMBO"])
+    assert chosen["agent_contact"] == "Contact person :Pacafic"

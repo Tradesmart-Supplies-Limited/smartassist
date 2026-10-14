@@ -39,6 +39,15 @@ If step 3 says "running scripts is disabled", use this instead of steps 3-4:
 4. **Generate.** Click "Generate PDFs". Then download everything as one ZIP, or one truck at a
    time. Use the preview to look at any truck before you send it.
 
+## DRC clearance agent
+The agent on the road manifest follows each truck's EXIT BORDER in the Excel:
+- **Mokambo:** Contact person Pacafic, mobile +243 995 527 463
+- **Sakania:** Contact person Oscar Levite, mobile +243 997 595 381
+
+For any other border (or an empty one) DocuLoop asks you to choose the agent before it makes those
+trucks' PDFs; until you choose, they show "WAITING" in the data check. The "Clearance agent" column
+shows which agent each truck will get. To change an agent, edit `AGENTS` in `core\layout.py`.
+
 ## Typed instructions (optional)
 In Step 3 you can type an order in plain English instead of changing the settings by hand.
 Click **Read instruction**, check the **Understood as** list (every truck is shown with its invoice

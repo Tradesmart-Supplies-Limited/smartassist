@@ -45,6 +45,10 @@ Things learned while building:
 ## Fields replaced
 - Page 1: manifest no. and file ref (both = invoice no.), loaded date, package count, quantity "40.00 MT",
   exit border, horse, trailer 1, trailer 2 ("NIL" if none), driver, passport.
+  Also the DRC clearance agent's "Contact person :" and "Mobile :" lines, chosen by exit border
+  (`layout.AGENTS`: MOKAMBO = Pacafic +243 995 527 463, SAKANIA = Oscar Levite +243 997 595 381;
+  "MALABAR RDC" stays). Any other border: the app asks the manager to choose the agent; until then
+  those trucks wait and get no PDF. `document_values` refuses an unknown border without an agent.
 - Page 2: invoice date, invoice no.; top row horse, trailer 1, driver; truck-detail row driver, horse,
   trailer 1, trailer 2; bags "40.00"; four lines (coal, freight 1, freight 2, insurance) each with
   quantity "40.00 MT", price "$70.00", amount "$2,800.00"; total. Freight wording is editable
@@ -97,6 +101,8 @@ Things learned while building:
 - Work only in the project folder. `samples\` is read-only. Do not touch `.venv\`.
 - `samples\` and `output\` are git-ignored. Real driver names, passports and phone numbers must never
   appear in committed files or tests.
+  Exception (owner's decision, 2026-10-14): the two clearance agents' names and numbers in
+  `core\layout.py` (`SAMPLE_VALUES` and `AGENTS`).
 - Out of scope: multiple clients, other layouts, a local AI model, editable consignee/consignor.
 - Only make changes that were asked for. Plain, readable code with short comments (the owner is a beginner).
 
