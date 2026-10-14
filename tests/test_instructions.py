@@ -110,28 +110,69 @@ def test_wrong_types_and_unknown_keys_are_dropped():
 
 def test_invalid_json_is_retried_once_then_fails():
     answers = iter(["not json", reply({"type": "use_excel_quantity"})])
-    plan = ins.read_order("x", TRUCKS, TODAY, lambda *a: next(answers))
+    plan = ins.read_order("back to the excel figures", TRUCKS, TODAY, lambda *a: next(answers))
     assert plan["understood"][0]["set"] == {ins.KEY_SOURCE: ins.SOURCE_EXCEL}
     with pytest.raises(ins.InvalidReply):
         ins.read_order("x", TRUCKS, TODAY, fake_chat("still not json"))
+
+
+# ---------- the order must really ask for it ----------
+
+@pytest.mark.parametrize("typed, action", [
+    ("Change the consignee to ABC Mining", {"type": "exclude_trucks", "trucks": ["3"]}),     # truck not typed
+    ("change truck 3 weight to 38", {"type": "exclude_trucks", "trucks": ["3"]}),           # no skip word
+    ("change truck 3 weight to 38", {"type": "fixed_quantity", "tonnage": 38}),             # not every truck
+    ("Email the PDFs to the client", {"type": "set_price", "item": "coal", "price": 75}),   # number not typed
+    ("Email the PDFs to the client", {"type": "set_date", "date_text": "20 October"}),     # date not typed
+    ("Email the PDFs to the client", {"type": "use_excel_quantity"}),                      # no excel word
+    ("Only do XX-TEST-290", {"type": "exclude_trucks", "trucks": ["XX-TEST-290"]}),         # opposite meaning
+])
+def test_actions_not_in_the_typed_order_are_refused(typed, action):
+    plan = ins.read_order(typed, TRUCKS, TODAY, fake_chat(reply(action)))
+    assert plan["understood"] == [] and "your order" in plan["not_done"][0]
+
+
+def test_trucks_inside_a_typed_range_count_as_typed():
+    plan = ins.read_order("Only make trucks 5 to 8", TRUCKS, TODAY,
+                          fake_chat(reply({"type": "only_trucks", "trucks": ["5", "6", "7", "8"]})))
+    assert plan["not_done"] == [] and applied(plan)[ins.KEY_ONLY] == [10, 11, 12, 13]
+
+
+def test_only_the_untyped_trucks_are_refused():
+    plan = ins.read_order("Remove horse AAA104ZM", TRUCKS, TODAY,
+                          fake_chat(reply({"type": "exclude_trucks", "trucks": ["17", "AAA104ZM"]})))
+    assert applied(plan)[ins.KEY_EXCLUDED] == [9] and "17" in plan["not_done"][0]
+
+
+def test_empty_actions_are_ignored_and_a_stray_date_is_kept():
+    plan = ins.read_order("Skip trucks 2 and 7, and date them yesterday", TRUCKS, TODAY, fake_chat(reply(
+        {"type": "exclude_trucks", "trucks": ["2", "7"], "date_text": "yesterday"}, {"type": "set_price"})))
+    assert plan["not_done"] == []
+    assert applied(plan)[ins.KEY_DATE] == date(2026, 10, 13) and applied(plan)[ins.KEY_EXCLUDED] == [7, 12]
+
+
+def test_empty_answer_says_nothing_was_understood():
+    plan = ins.read_order("delete everything", TRUCKS, TODAY, fake_chat(reply()))
+    assert plan["understood"] == [] and plan["not_done"] == ["Nothing in this order could be understood as a setting"]
 
 
 # ---------- applying ----------
 
 def test_nothing_changes_until_apply_and_orders_add_up():
     state = {"price_coal": 70.0}
-    plan = ins.read_order("x", TRUCKS, TODAY, fake_chat(reply(
+    plan = ins.read_order("coal 75 and skip truck 1", TRUCKS, TODAY, fake_chat(reply(
         {"type": "set_price", "item": "coal", "price": 75}, {"type": "exclude_trucks", "trucks": ["1"]})))
     assert state == {"price_coal": 70.0}                  # reading an order changes nothing
     ins.apply_plan(plan, state)
     assert state["price_coal"] == 75.0 and state[ins.KEY_EXCLUDED] == [6]
-    second = ins.read_order("x", TRUCKS, TODAY, fake_chat(reply({"type": "exclude_trucks", "trucks": ["2"]})))
+    second = ins.read_order("skip 2", TRUCKS, TODAY, fake_chat(reply({"type": "exclude_trucks", "trucks": ["2"]})))
     ins.apply_plan(second, state)
     assert state[ins.KEY_EXCLUDED] == [6, 7] and len(state[ins.KEY_ACTIVE]) == 3
 
 
 def test_fixed_and_excel_quantity():
-    plan = ins.read_order("x", TRUCKS, TODAY, fake_chat(reply({"type": "fixed_quantity", "tonnage": 42.5})))
+    plan = ins.read_order("42.5 tonnes on every truck", TRUCKS, TODAY,
+                          fake_chat(reply({"type": "fixed_quantity", "tonnage": 42.5})))
     assert applied(plan) == {ins.KEY_SOURCE: ins.SOURCE_FIXED, ins.KEY_TONNAGE: 42.5,
                              ins.KEY_ACTIVE: ["Same figures for every truck: 42.5 MT"]}
 

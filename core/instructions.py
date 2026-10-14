@@ -251,6 +251,68 @@ def describe_truck(t):
 
 # ---------- 4. turning actions into a plan ----------
 
+# Words the typed order must contain for each kind of action (every group needs one of its words).
+# This stops the model from turning an unrelated order into a real change.
+INTENT_WORDS = {
+    "exclude_trucks": [["skip", "exclude", "leave out", "leave", "remove", "don't", "dont", "do not",
+                        "without", "except", "drop", "omit", "not make", "not do"]],
+    "only_trucks": [["only", "just"]],
+    "set_date": [["date", "dated", "today", "tomorrow", "yesterday"] + list(MONTHS)],
+    "set_price": [["price", "prices", "cost", "rate", "dollar", "dollars", "usd", "$", "coal", "freight",
+                   "insurance"]],
+    "set_freight_label": [["freight", "line"]],
+    "fixed_quantity": [["every", "all", "each"], ["tonne", "tonnes", "ton", "tons", "mt", "bag", "bags",
+                                                  "package", "packages", "quantity", "quantities"]],
+    "use_excel_quantity": [["excel", "spreadsheet"]],
+}
+
+
+def _has_word(word, text):
+    """True if `word` appears in the lower-case text as a whole word (or as the symbol $)."""
+    if word == "$":
+        return "$" in text
+    return re.search(r"(?<![a-z])" + re.escape(word) + r"(?![a-z])", text) is not None
+
+
+def _numbers_in(text):
+    return {float(n.replace(",", ".")) for n in re.findall(r"\d+(?:[.,]\d+)?", text)}
+
+
+def typed_trucks(refs, typed):
+    """Split truck references into (typed by the manager, not typed). A number inside a typed
+    range such as '5 to 8' counts as typed."""
+    lower = typed.lower()
+    ranges = [(int(x), int(y)) for x, y in re.findall(r"(\d+)\s*(?:to|-|through|until)\s*(\d+)", lower)]
+    kept, dropped = [], []
+    for ref in refs:
+        plain = re.sub(r"^(truck|trucks|invoice|no\.?|s/?n)\s*", "", ref.strip(), flags=re.I)
+        if plain.isdigit():
+            found = (re.search(r"(?<!\d)" + plain + r"(?!\d)", lower) is not None
+                     or any(min(x, y) <= int(plain) <= max(x, y) for x, y in ranges))
+        else:
+            found = bool(_simple(plain)) and _simple(plain) in _simple(typed)
+        (kept if found else dropped).append(ref)
+    return kept, dropped
+
+
+def not_in_order(action, typed):
+    """A reason if the action uses something the manager did not type, otherwise None."""
+    lower = typed.lower()
+    for group in INTENT_WORDS[action["type"]]:
+        if not any(_has_word(w, lower) for w in group):
+            return f"{action['type'].replace('_', ' ')} ignored: your order does not ask for it"
+    for key in ("range_from", "range_to"):
+        if action[key] and not re.search(r"(?<!\d)" + re.escape(action[key].strip()) + r"(?!\d)", lower):
+            return f"range '{action[key]}' was not in your order, so it was ignored"
+    for key in ("price", "tonnage", "packages"):
+        if action[key] is not None and float(action[key]) not in _numbers_in(typed):
+            return f"the number {action[key]:g} was not in your order, so it was ignored"
+    for key in ("date_text", "text"):
+        if action[key] and _simple(action[key]) not in _simple(typed):
+            return f"'{action[key]}' was not in your order, so it was ignored"
+    return None
+
+
 def _picked_trucks(action, trucks):
     """Resolve the trucks of an exclude/only action. Returns (found trucks, reasons for refusals)."""
     found, reasons = [], []
@@ -269,13 +331,27 @@ def _picked_trucks(action, trucks):
     return list(unique.values()), reasons
 
 
-def check_action(action, trucks, today):
+def check_action(action, trucks, today, typed):
     """One validated action -> list of plan items: {"ok", "say", "set"/"exclude"/"only"}."""
     kind = action["type"]
     per_truck = action["trucks"] or action["range_from"] or action["range_to"]
 
     def refuse(reason):
         return [{"ok": False, "say": reason}]
+
+    reason = not_in_order(action, typed)
+    if reason:
+        return refuse(reason)
+    untyped = []
+    if action["trucks"]:
+        action = dict(action)
+        action["trucks"], untyped = typed_trucks(action["trucks"], typed)
+        per_truck = action["trucks"] or action["range_from"] or action["range_to"]
+        if not per_truck:
+            return refuse("truck(s) " + ", ".join(untyped) + " were not in your order, so they were ignored")
+    if untyped:
+        return check_action(action, trucks, today, typed) + refuse(
+            "truck(s) " + ", ".join(untyped) + " were not in your order, so they were ignored")
 
     if kind in ("exclude_trucks", "only_trucks"):
         if not per_truck:
@@ -339,15 +415,37 @@ def check_action(action, trucks, today):
     return [{"ok": True, "say": "Tonnage and packages from the Excel again", "set": {KEY_SOURCE: SOURCE_EXCEL}}]
 
 
-def make_plan(actions, unsupported, dropped, trucks, today):
+NEEDS = {"exclude_trucks": ["trucks", "range_from", "range_to"], "only_trucks": ["trucks", "range_from", "range_to"],
+         "set_date": ["date_text"], "set_price": ["item", "price"], "set_freight_label": ["line", "text"],
+         "fixed_quantity": ["tonnage", "packages"]}
+
+
+def tidy_actions(actions):
+    """Small models sometimes add empty actions, or put a date inside another action.
+    Empty actions are left out; a stray date becomes its own set_date action."""
+    tidy, dates = [], {a["date_text"] for a in actions if a["type"] == "set_date" and a["date_text"]}
+    for action in actions:
+        if action["type"] != "set_date" and action["date_text"] and action["date_text"] not in dates:
+            dates.add(action["date_text"])
+            tidy.append({**{k: None for k in FIELD_TYPES}, "type": "set_date", "date_text": action["date_text"]})
+        if action["type"] in NEEDS and not any(action[k] is not None for k in NEEDS[action["type"]]):
+            continue
+        tidy.append(action)
+    return tidy
+
+
+def make_plan(actions, unsupported, dropped, trucks, today, typed):
     """Returns {"understood": [ok items], "not_done": [plain-English reasons]}."""
     understood, not_done = [], []
+    actions = tidy_actions(actions)
     for action in actions:
-        for item in check_action(action, trucks, today):
+        for item in check_action(action, trucks, today, typed):
             (understood if item["ok"] else not_done).append(item if item["ok"] else item["say"])
     not_done += [f"Not supported: {u}" for u in unsupported]
     if dropped:
         not_done.append(f"{dropped} unknown order type(s) ignored")
+    if not understood and not not_done:
+        not_done.append("Nothing in this order could be understood as a setting")
     return {"understood": understood, "not_done": not_done}
 
 
@@ -357,7 +455,7 @@ def read_order(text, trucks, today, chat):
     for _attempt in range(2):
         try:
             actions, unsupported, dropped = validate_reply(chat(SYSTEM_PROMPT, text, SCHEMA))
-            plan = make_plan(actions, unsupported, dropped, trucks, today)
+            plan = make_plan(actions, unsupported, dropped, trucks, today, text)
             plan["actions"] = actions
             return plan
         except InvalidReply:

@@ -34,7 +34,7 @@ def chat(system, user, schema):
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
         "format": schema,
         "stream": False,
-        "options": {"temperature": 0, "num_ctx": 4096},
+        "options": {"temperature": 0, "num_ctx": 4096, "num_predict": 600},   # 600 tokens: enough for ~6 actions
         "keep_alive": "2m",
     }
     request = urllib.request.Request(OLLAMA_URL + "/api/chat", data=json.dumps(body).encode("utf-8"),
