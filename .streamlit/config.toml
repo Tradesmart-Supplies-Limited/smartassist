@@ -1,0 +1,3 @@
+# DocuLoop sends nothing to the internet: no usage statistics.
+[browser]
+gatherUsageStats = false
