@@ -101,14 +101,17 @@ Things learned while building:
   On 2026-10-14: 24/25 right, 5/5 unsupported not applied, about 7 s per order (first 15-30 s).
   Known miss: "Only do <invoice>" is read as exclude by the model and refused by code.
 
-## Inspection reports (optional)
-- `core\inspection.py` (no Streamlit): `match_reports` (invoice no. in the file name, then horse plate;
-  ignores case, spaces, '-', '_'; digits must not touch, so 288 is not 2880; a file fitting two trucks or
-  two files for one truck go to manual assignment), `validate_report`, `combine` (3 pages then the report,
-  report pages copied unchanged, no font subsetting on them), `build_zip` (one folder per truck).
-- `app.py`: section after Generate. Hidden extras when nothing is uploaded. Reports in
-  `st.session_state["reports"]` keyed by invoice no.; cleared on a new Excel (uploader key changes).
-  The original ZIP and per-truck buttons stay as they were. No logging (only instructions are logged).
+## Inspection report (optional, uploaded once)
+- Owner's request (2026-10-14): ONE inspection report for every truck, uploaded once and kept on disk
+  at `output\inspection_report.pdf` (git-ignored) until the manager replaces or removes it. This
+  replaced the earlier one-report-per-truck upload and matching.
+- `core\inspection.py` (no Streamlit): `validate_report`, `combine` (3 pages then the report, pages
+  copied unchanged, no font subsetting on them), `build_zip` (one folder per truck; modes "Documents
+  only" and "Combined single PDF per truck"). `match_reports` is still there and tested, but the app
+  no longer uses it.
+- `app.py`: section after Generate; uploader `on_change=save_report` writes the file; "Remove it"
+  deletes it. `st.session_state["reports"]` maps every made truck's invoice no. to the same report.
+  With no saved report the extra options are hidden.
 - Tests: `tests\test_inspection.py`.
 
 ## Design rules (UI)

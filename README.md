@@ -53,18 +53,17 @@ If step 3 says "running scripts is disabled", use this instead of steps 3-4:
 4. **Generate.** Click "Generate PDFs". Then download everything as one ZIP, or one truck at a
    time. Use the preview to look at any truck before you send it.
 
-## Inspection reports (optional)
-After **Generate PDFs**, scroll to **Inspection reports (optional)** and upload one inspection report
-PDF per truck (you can select several files at once). If you upload nothing, nothing changes.
-- Files are matched to trucks by the **invoice number** in the file name (e.g. `YS-BMS10-288 inspection.pdf`),
-  otherwise by the **horse plate**. Capitals, spaces, `-` and `_` do not matter.
-- The table shows each truck as **Matched**, **Manual** (you chose the file) or **Missing**, with a line
-  such as "12 of 14 trucks have a report. 2 missing." A truck without a report is still made normally.
-- Files that fit no truck, or two trucks, appear under "Assign the remaining files by hand".
-- **What to include** decides the ZIP: documents only, or one combined PDF per truck (the 3 pages,
-  then the report). The ZIP has one folder per truck.
-- **Download per truck** offers the documents, the inspection report and the combined PDF.
-- Reports are never changed: their pages are copied as they are. Loading a new Excel clears them.
+## Inspection report (optional, uploaded once)
+The inspection report is the same for every truck, so you upload it **once**:
+1. In **Inspection report (optional)**, upload the report PDF. It is kept on this computer
+   (`output\inspection_report.pdf`) and shown as "Saved inspection report" from then on, also after
+   restarting DocuLoop.
+2. Only when the client sends a new report: open **Replace it** and upload the new one.
+   **Remove it** stops adding a report.
+3. After **Generate PDFs**, choose **What to include**: documents only, or one combined PDF per truck
+   (the 3 pages, then the report). **Download ZIP** gives one folder per truck; **Download per truck**
+   offers each truck's documents or combined PDF.
+The report itself is never changed: its pages are copied as they are.
 
 ## DRC clearance agent
 The agent on the road manifest follows each truck's EXIT BORDER in the Excel:

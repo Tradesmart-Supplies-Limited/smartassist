@@ -153,7 +153,6 @@ if st.session_state.get("xl_id") != xl_id:
     st.session_state.xl_id = xl_id
     for key in (ins.KEY_EXCLUDED, ins.KEY_ONLY, ins.KEY_ACTIVE, "pending", "reports"):
         st.session_state.pop(key, None)
-    st.session_state.reports_round = st.session_state.get("reports_round", 0) + 1
 
 # Every Step 3 setting has a key, so an applied order can change it. These are the defaults.
 DEFAULTS = {
@@ -462,62 +461,63 @@ with st.container(border=True):
             for page, tab in zip(preview, st.tabs(["Manifest", "Invoice", "Packing list"])):
                 tab.image(page.get_pixmap(dpi=110).tobytes("png"))
 
-# ---------------- Inspection reports (optional) ----------------
+# ---------------- Inspection report (optional, uploaded once) ----------------
+# One inspection report is used for every truck. It is kept on this computer, so the manager
+# uploads it once and only again when the client sends a new one. It is never changed.
+REPORT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "inspection_report.pdf")
+
+
+def save_report():
+    """Uploader callback: check the new report and keep it on this computer."""
+    upload = st.session_state.get(f"inspection_upload_{st.session_state.get('report_round', 0)}")
+    if upload is None:
+        return
+    ok, _pages, message = insp.validate_report(upload.getvalue())
+    if not ok:
+        st.session_state.report_error = f"{upload.name} was not saved: {message}."
+        return
+    os.makedirs(os.path.dirname(REPORT_PATH), exist_ok=True)
+    with open(REPORT_PATH, "wb") as f:
+        f.write(upload.getvalue())
+    st.session_state.report_error = None
+    st.session_state.report_round = st.session_state.get("report_round", 0) + 1   # empties the upload box
+
+
+def remove_report():
+    """Remove button: stop using the saved report."""
+    if os.path.exists(REPORT_PATH):
+        os.remove(REPORT_PATH)
+
+
 with st.container(border=True):
-    st.markdown("### :material/assignment: Inspection reports (optional)")
-    st.caption("Upload one inspection report PDF per truck. They are matched by invoice number or horse plate "
-               "in the file name, and copied unchanged. Without reports everything above works as before.")
-    uploads = st.file_uploader("Inspection report PDFs", type=["pdf"], accept_multiple_files=True,
-                               key=f"inspection_files_{st.session_state.get('reports_round', 0)}")
+    st.markdown("### :material/assignment: Inspection report (optional)")
+    st.caption("Upload the inspection report once. It is kept on this computer and added to every truck "
+               "until you replace or remove it. The report itself is never changed.")
+    report = None
+    if os.path.exists(REPORT_PATH):
+        with open(REPORT_PATH, "rb") as f:
+            report = f.read()
+    if st.session_state.get("report_error"):
+        st.error(st.session_state.report_error, icon=":material/error:")
 
-    ready_trucks = [t for t in trucks if t.invoice_no in {values["invoice_no"] for _name, values in jobs}]
-    valid_files = []
-    for upload in uploads or []:
-        ok, _pages, message = insp.validate_report(upload.getvalue())
-        if ok:
-            valid_files.append((upload.name, upload.getvalue()))
-        else:
-            st.error(f"{upload.name} is not used: {message}.", icon=":material/error:")
+    upload_label = "Replace the inspection report" if report else "Upload the inspection report (PDF)"
+    if report:
+        _ok, pages, _message = insp.validate_report(report)
+        saved_on = date.fromtimestamp(os.path.getmtime(REPORT_PATH)).strftime("%d %b %Y")
+        c1, c2 = st.columns([4, 1], vertical_alignment="center")
+        c1.success(f"Saved inspection report: {pages} page(s), saved on {saved_on}. It is used for every truck.",
+                   icon=":material/task_alt:")
+        c2.button("Remove it", key="remove_report", on_click=remove_report, icon=":material/delete:")
+        with st.expander("Replace it (only when the client sends a new report)", icon=":material/upload_file:"):
+            st.file_uploader(upload_label, type=["pdf"], key=f"inspection_upload_{st.session_state.get('report_round', 0)}",
+                             on_change=save_report)
+    else:
+        st.file_uploader(upload_label, type=["pdf"], key=f"inspection_upload_{st.session_state.get('report_round', 0)}",
+                         on_change=save_report)
 
-    matched, unmatched, missing, sources = insp.match_reports(ready_trucks, valid_files)
-    NO_REPORT = "(no report)"
-    manual = {}
-    if valid_files and missing and unmatched:
-        st.markdown("**Assign the remaining files by hand**")
-        unmatched_names = [name for name, _data in unmatched]
-        for truck in [t for t in ready_trucks if t.invoice_no in missing]:
-            pick = st.selectbox(f"Report for {truck.invoice_no} · {truck.driver}", [NO_REPORT] + unmatched_names,
-                                key=f"manual_report_{truck.invoice_no}")
-            if pick != NO_REPORT:
-                manual[truck.invoice_no] = pick
-        doubles = {name for name in manual.values() if list(manual.values()).count(name) > 1}
-        if doubles:
-            st.error("The same file was chosen for two trucks: " + ", ".join(sorted(doubles)) +
-                     ". It is not used until you choose it for one truck only.", icon=":material/error:")
-            manual = {inv: name for inv, name in manual.items() if name not in doubles}
-
-    by_name = dict(unmatched)
-    reports = dict(matched)
-    reports.update({inv: by_name[name] for inv, name in manual.items()})
+    # Every truck that is made gets the same report.
+    reports = {values["invoice_no"]: report for _name, values in jobs} if report else {}
     st.session_state["reports"] = reports       # keyed by invoice number
-
-    if valid_files:
-        report_rows = []
-        for truck in ready_trucks:
-            if truck.invoice_no in matched:
-                source_name, status = sources[truck.invoice_no], "✅ Matched"
-            elif truck.invoice_no in manual:
-                source_name, status = manual[truck.invoice_no], "✋ Manual"
-            else:
-                source_name, status = "", "➖ Missing"
-            report_rows.append({"Truck": f"{truck.invoice_no} · {truck.driver}", "Matched file": source_name,
-                                "Status": status})
-        st.dataframe(pd.DataFrame(report_rows), hide_index=True)
-        left_over = [name for name, _data in unmatched if name not in manual.values()]
-        if left_over:
-            st.warning("Not matched to any truck: " + ", ".join(left_over), icon=":material/warning:")
-        st.write(f"**{len(reports)} of {len(ready_trucks)} trucks have a report. "
-                 f"{len(ready_trucks) - len(reports)} missing.**")
 
     @st.cache_data(show_spinner=False, max_entries=200)
     def combined_pdf(documents, report):
@@ -529,35 +529,29 @@ with st.container(border=True):
         """The batch ZIP, made once per choice and remembered between clicks."""
         return insp.build_zip({"files": files, "jobs": jobs}, reports, mode)
 
-    if not valid_files:
-        pass                              # nothing uploaded: the app works exactly as before
+    if not report:
+        pass                              # no report: the app works exactly as before
     elif not results:
         include = st.radio("What to include", insp.MODES, key="inspection_mode")
-        st.info("Click 'Generate PDFs' above to get the downloads with inspection reports.", icon=":material/info:")
+        st.info("Click 'Generate PDFs' above to get the downloads with the inspection report.", icon=":material/info:")
     else:
         include = st.radio("What to include", insp.MODES, key="inspection_mode")
         with st.spinner("Preparing the ZIP..."):
-            batch = zip_for(results["files"], results["jobs"], reports, include)
+            batch = zip_for(results["files"], results["jobs"],
+                            {values["invoice_no"]: report for _name, values in results["jobs"]}, include)
         st.download_button(f"Download ZIP: {include}", batch,
-                           file_name=f"DocuLoop_{results['date']}_{len(reports)}_reports.zip",
+                           file_name=f"DocuLoop_{results['date']}_with_inspection.zip",
                            mime="application/zip", key="download_inspection_zip", type="primary",
                            icon=":material/download:")
-        with st.expander("Download per truck (documents, inspection report, combined)", icon=":material/description:"):
+        with st.expander("Download per truck (documents or combined)", icon=":material/description:"):
             for n, ((file_name, documents), (_name, values)) in enumerate(zip(results["files"], results["jobs"])):
                 invoice_no = values["invoice_no"]
-                report = reports.get(invoice_no)
-                c1, c2, c3, c4 = st.columns([2, 1, 1, 1], vertical_alignment="center")
+                c1, c2, c3 = st.columns([2, 1, 1], vertical_alignment="center")
                 c1.write(f"{invoice_no} · {values['driver']}")
                 c2.download_button("Documents", documents, file_name=file_name, mime="application/pdf",
                                    key=f"insp_documents_{n}")
-                if report:
-                    folder = insp.safe_name(invoice_no)
-                    c3.download_button("Inspection report", report, file_name=f"{folder}_inspection_report.pdf",
-                                       mime="application/pdf", key=f"insp_report_{n}")
-                    c4.download_button("Combined", combined_pdf(documents, report),
-                                       file_name=f"{folder}_with_inspection.pdf", mime="application/pdf",
-                                       key=f"insp_combined_{n}")
-                else:
-                    c3.caption("No report")
+                c3.download_button("Combined", combined_pdf(documents, report),
+                                   file_name=f"{insp.safe_name(invoice_no)}_with_inspection.pdf",
+                                   mime="application/pdf", key=f"insp_combined_{n}")
 
 ui.footer()
