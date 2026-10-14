@@ -27,19 +27,19 @@ If step 3 says "running scripts is disabled", use this instead of steps 3-4:
 - The navy band at the top shows whether the instruction assistant is **ready** or **offline**.
 - Each step is a card with a number. When a step is done, the number turns into a green tick and a
   one-line summary tells you what was used (file, sheet, date, prices).
-- The tiles above Step 3 count the trucks: found, ready, need attention, skipped, and the total tonnage.
+- The two tiles above Step 3 show how many trucks were found and how many are ready.
 - In the data check, every truck has a status with an icon and a word: ✅ Ready, ⚠️ Warning,
   ⏳ Waiting (choose the clearance agent), ⛔ Error (no PDF), ➖ Excluded (by an instruction).
   "Points to check" under the table lists the reasons.
-- The instruction box has example buttons ("Skip truck 3" and others) that fill the box for you.
+- The instruction box has an example button ("Coal price is 75") that fills the box for you.
 - After **Generate PDFs**: **Download everything (ZIP)**, then one truck at a time, then the preview.
 
 ## The four steps
 1. **Sample PDF.** Upload any finished truck PDF in this client's format (for example
    `YS-BMS10-288.pdf` or `YS-BMS10-291.pdf`). A green tick confirms the layout was recognised. A red
    message lists what does not match (for example a missing title or a value in the wrong place).
-2. **Loading-order Excel.** Upload the Excel. Check the sheet and the row that holds the column
-   titles (normally row 5). Open "Column matching" only if a column was not recognised.
+2. **Loading-order Excel.** Upload the Excel and check the sheet. The row with the column titles is
+   found automatically; "Column matching" opens by itself only if a column was not recognised.
 3. **Job details.**
    - Date on the documents (today unless you change it), written like `12-Oct-26`.
    - Wording of the two freight lines.
