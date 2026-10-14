@@ -78,7 +78,8 @@ def step_header(place, number, title, done=False, summary=""):
     text = (f'<div class="dl-step{" dl-done" if done else ""}"><span class="dl-num">{mark}</span>'
             f'<h3>Step {number} · {html.escape(title)}</h3></div>')
     if summary:
-        text += f'<p class="dl-summary">{"✓ " if done else ""}{html.escape(summary)}</p>'
+        safe = html.escape(summary).replace("$", "&#36;")    # a plain $, not the start of maths
+        text += f'<p class="dl-summary">{"✓ " if done else ""}{safe}</p>'
     place.markdown(text, unsafe_allow_html=True)
 
 
