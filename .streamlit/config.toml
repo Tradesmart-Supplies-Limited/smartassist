@@ -1,3 +1,28 @@
 # DocuLoop sends nothing to the internet: no usage statistics.
 [browser]
 gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
+
+# ---- ALL DocuLoop colours live here (core/ui.py reads this block for its own CSS too) ----
+# Change primaryColor to change the accent everywhere. Every text colour below keeps a
+# contrast of at least 4.5:1 on the page, card and surface backgrounds.
+[theme]
+base = "light"
+primaryColor = "#1F4E79"              # accent: deep navy
+backgroundColor = "#F5F7FA"           # page
+secondaryBackgroundColor = "#E9EEF4"  # inputs, table headers
+textColor = "#1B2533"
+linkColor = "#1F4E79"
+borderColor = "#D3DCE6"
+dataframeBorderColor = "#D3DCE6"
+greenColor = "#1E7A46"                # ready
+orangeColor = "#985800"               # warning / needs attention
+redColor = "#B42318"                  # error
+grayColor = "#5A6676"                 # excluded / secondary text
+blueColor = "#1F4E79"
+font = "Segoe UI, Arial, sans-serif"  # system fonts only, nothing downloaded
+headingFont = "Segoe UI, Arial, sans-serif"
+baseRadius = "8px"
+showWidgetBorder = true
