@@ -100,10 +100,6 @@ def test_zip_folders_and_names_for_each_mode(template):
         return sorted(zipfile.ZipFile(io.BytesIO(insp.build_zip(results, reports, mode))).namelist())
 
     assert names(insp.MODE_DOCUMENTS) == ["XX-TEST-288/XX-TEST-288.pdf", "XX-TEST-289/XX-TEST-289.pdf"]
-    assert names(insp.MODE_SEPARATE) == ["XX-TEST-288/XX-TEST-288.pdf",
-                                         "XX-TEST-288/XX-TEST-288_inspection_report.pdf",
-                                         "XX-TEST-289/XX-TEST-289.pdf"]
     assert names(insp.MODE_COMBINED) == ["XX-TEST-288/XX-TEST-288_with_inspection.pdf",
                                          "XX-TEST-289/XX-TEST-289.pdf"]
-    separate = zipfile.ZipFile(io.BytesIO(insp.build_zip(results, reports, insp.MODE_SEPARATE)))
-    assert separate.read("XX-TEST-288/XX-TEST-288_inspection_report.pdf") == reports["XX-TEST-288"]  # unchanged
+    assert insp.MODES == [insp.MODE_DOCUMENTS, insp.MODE_COMBINED]

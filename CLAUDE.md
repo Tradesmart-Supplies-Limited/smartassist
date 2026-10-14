@@ -100,6 +100,22 @@ Things learned while building:
   The original ZIP and per-truck buttons stay as they were. No logging (only instructions are logged).
 - Tests: `tests\test_inspection.py`.
 
+## Design rules (UI)
+- All colours live in the `[theme]` block of `.streamlit\config.toml` (accent = `primaryColor`, plus
+  green / orange / red / gray for status). `core\ui.py` reads that block with `tomllib` and passes it
+  to the CSS as `--dl-*` variables. Never hard-code a colour anywhere else. Text contrast >= 4.5:1.
+- Offline only: system fonts (Segoe UI, Arial, sans-serif), inline SVG, Streamlit's bundled
+  `:material/...:` icons and emoji. No web fonts, CDN files or remote images.
+- `assets\style.css` is the only CSS file, loaded once by `ui.apply_style()`. Keep it short and use
+  `data-testid` selectors only. Prefer native components (bordered containers, `st.metric`, `st.badge`).
+- Each step is `st.container(border=True)` with `ui.step_header(...)` in an `st.empty()` slot: a number
+  while open, a green tick and a one-line summary when done.
+- Status is always icon + word (`ui.STATUS`), never colour alone. Max content width 1320 px, no page
+  scrolling sideways at 1366 px.
+- UI changes must never change logic, figures, widget keys or callbacks.
+- Inspection report downloads offer only "Documents only" and "Combined single PDF per truck"
+  (the separate-files option was removed on the owner's request, 2026-10-14).
+
 ## Streamlit notes
 - No `use_container_width`. Keep results in `st.session_state`. Every download button needs a unique key.
 

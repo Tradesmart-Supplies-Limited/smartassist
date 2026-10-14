@@ -15,9 +15,8 @@ except ImportError:          # older installs call the package "fitz"
 
 # What the manager can choose to download.
 MODE_DOCUMENTS = "Documents only"
-MODE_SEPARATE = "Documents + inspection report (separate files)"
 MODE_COMBINED = "Combined single PDF per truck (documents then report)"
-MODES = [MODE_DOCUMENTS, MODE_SEPARATE, MODE_COMBINED]
+MODES = [MODE_DOCUMENTS, MODE_COMBINED]
 
 
 def _key(text):
@@ -108,6 +107,4 @@ def build_zip(results, reports, mode):
                 archive.writestr(f"{folder}/{folder}_with_inspection.pdf", combine(documents, report))
                 continue
             archive.writestr(f"{folder}/{file_name}", documents)
-            if mode == MODE_SEPARATE and report:
-                archive.writestr(f"{folder}/{folder}_inspection_report.pdf", report)
     return buffer.getvalue()

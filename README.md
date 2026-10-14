@@ -23,6 +23,17 @@ Skip step 3 and `streamlit run app.py` uses the wrong Python and shows "No modul
 If step 3 says "running scripts is disabled", use this instead of steps 3-4:
 `.venv\Scripts\python -m streamlit run app.py`
 
+## The screen
+- The navy band at the top shows whether the instruction assistant is **ready** or **offline**.
+- Each step is a card with a number. When a step is done, the number turns into a green tick and a
+  one-line summary tells you what was used (file, sheet, date, prices).
+- The tiles above Step 3 count the trucks: found, ready, need attention, skipped, and the total tonnage.
+- In the data check, every truck has a status with an icon and a word: ✅ Ready, ⚠️ Warning,
+  ⏳ Waiting (choose the clearance agent), ⛔ Error (no PDF), ➖ Excluded (by an instruction).
+  "Points to check" under the table lists the reasons.
+- The instruction box has example buttons ("Skip truck 3" and others) that fill the box for you.
+- After **Generate PDFs**: **Download everything (ZIP)**, then one truck at a time, then the preview.
+
 ## The four steps
 1. **Sample PDF.** Upload the sample (for example `YS-BMS10-288.pdf`). A green message confirms
    the layout was recognised. A red message means this is not the expected sample.
@@ -48,8 +59,8 @@ PDF per truck (you can select several files at once). If you upload nothing, not
 - The table shows each truck as **Matched**, **Manual** (you chose the file) or **Missing**, with a line
   such as "12 of 14 trucks have a report. 2 missing." A truck without a report is still made normally.
 - Files that fit no truck, or two trucks, appear under "Assign the remaining files by hand".
-- **What to include** decides the ZIP: documents only; documents + report as separate files; or one
-  combined PDF per truck (the 3 pages, then the report). The ZIP has one folder per truck.
+- **What to include** decides the ZIP: documents only, or one combined PDF per truck (the 3 pages,
+  then the report). The ZIP has one folder per truck.
 - **Download per truck** offers the documents, the inspection report and the combined PDF.
 - Reports are never changed: their pages are copied as they are. Loading a new Excel clears them.
 
