@@ -9,6 +9,7 @@ from decimal import Decimal
 import pandas as pd
 import streamlit as st
 
+from core import inspection as insp
 from core import instructions as ins
 from core import layout, llm
 from core.excel_reader import clean_sheet, detect_header_row, read_raw_sheets
@@ -118,8 +119,9 @@ truck_refs = [{"row": t.row, "sn": serial_no(t), "invoice_no": t.invoice_no, "ho
 xl_id = (xl_file.name, xl_file.size, sheet_name, int(header_row))
 if st.session_state.get("xl_id") != xl_id:
     st.session_state.xl_id = xl_id
-    for key in (ins.KEY_EXCLUDED, ins.KEY_ONLY, ins.KEY_ACTIVE, "pending"):
+    for key in (ins.KEY_EXCLUDED, ins.KEY_ONLY, ins.KEY_ACTIVE, "pending", "reports"):
         st.session_state.pop(key, None)
+    st.session_state.reports_round = st.session_state.get("reports_round", 0) + 1
 
 # Every Step 3 setting has a key, so an applied order can change it. These are the defaults.
 DEFAULTS = {
@@ -365,3 +367,102 @@ if results:
     preview = pymupdf.open(stream=dict(files)[chosen], filetype="pdf")
     for page, tab in zip(preview, st.tabs(["Road manifest", "Commercial invoice", "Packing list"])):
         tab.image(page.get_pixmap(dpi=110).tobytes("png"))
+
+# ---------------- Inspection reports (optional) ----------------
+st.header("Inspection reports (optional)")
+st.caption("Upload one inspection report PDF per truck. They are matched by invoice number or horse plate "
+           "in the file name, and copied unchanged. Without reports everything above works as before.")
+uploads = st.file_uploader("Inspection report PDFs", type=["pdf"], accept_multiple_files=True,
+                           key=f"inspection_files_{st.session_state.get('reports_round', 0)}")
+
+ready_trucks = [t for t in trucks if t.invoice_no in {values["invoice_no"] for _name, values in jobs}]
+valid_files = []
+for upload in uploads or []:
+    ok, _pages, message = insp.validate_report(upload.getvalue())
+    if ok:
+        valid_files.append((upload.name, upload.getvalue()))
+    else:
+        st.error(f"{upload.name} is not used: {message}.")
+
+matched, unmatched, missing, sources = insp.match_reports(ready_trucks, valid_files)
+NO_REPORT = "(no report)"
+manual = {}
+if valid_files and missing and unmatched:
+    st.markdown("**Assign the remaining files by hand**")
+    unmatched_names = [name for name, _data in unmatched]
+    for truck in [t for t in ready_trucks if t.invoice_no in missing]:
+        pick = st.selectbox(f"Report for {truck.invoice_no} · {truck.driver}", [NO_REPORT] + unmatched_names,
+                            key=f"manual_report_{truck.invoice_no}")
+        if pick != NO_REPORT:
+            manual[truck.invoice_no] = pick
+    doubles = {name for name in manual.values() if list(manual.values()).count(name) > 1}
+    if doubles:
+        st.error("The same file was chosen for two trucks: " + ", ".join(sorted(doubles)) +
+                 ". It is not used until you choose it for one truck only.")
+        manual = {inv: name for inv, name in manual.items() if name not in doubles}
+
+by_name = dict(unmatched)
+reports = dict(matched)
+reports.update({inv: by_name[name] for inv, name in manual.items()})
+st.session_state["reports"] = reports       # keyed by invoice number
+
+if valid_files:
+    report_rows = []
+    for truck in ready_trucks:
+        if truck.invoice_no in matched:
+            source_name, status = sources[truck.invoice_no], "Matched"
+        elif truck.invoice_no in manual:
+            source_name, status = manual[truck.invoice_no], "Manual"
+        else:
+            source_name, status = "", "Missing"
+        report_rows.append({"Truck": f"{truck.invoice_no} · {truck.driver}", "Matched file": source_name,
+                            "Status": status})
+    st.dataframe(pd.DataFrame(report_rows), hide_index=True)
+    left_over = [name for name, _data in unmatched if name not in manual.values()]
+    if left_over:
+        st.warning("Not matched to any truck: " + ", ".join(left_over))
+    st.write(f"**{len(reports)} of {len(ready_trucks)} trucks have a report. "
+             f"{len(ready_trucks) - len(reports)} missing.**")
+
+
+
+@st.cache_data(show_spinner=False, max_entries=200)
+def combined_pdf(documents, report):
+    """Documents then report, made once per pair and remembered."""
+    return insp.combine(documents, report)
+
+
+@st.cache_data(show_spinner=False, max_entries=6)
+def zip_for(files, jobs, reports, mode):
+    """The batch ZIP, made once per choice and remembered between clicks."""
+    return insp.build_zip({"files": files, "jobs": jobs}, reports, mode)
+
+
+if not valid_files:
+    pass                              # nothing uploaded: the app works exactly as before
+elif not results:
+    include = st.radio("What to include", insp.MODES, key="inspection_mode")
+    st.info("Click 'Generate PDFs' above to get the downloads with inspection reports.")
+else:
+    include = st.radio("What to include", insp.MODES, key="inspection_mode")
+    with st.spinner("Preparing the ZIP..."):
+        batch = zip_for(results["files"], results["jobs"], reports, include)
+    st.download_button(f"Download ZIP: {include}", batch, file_name=f"DocuLoop_{results['date']}_{len(reports)}_reports.zip",
+                       mime="application/zip", key="download_inspection_zip")
+    with st.expander("Download per truck (documents, inspection report, combined)"):
+        for n, ((file_name, documents), (_name, values)) in enumerate(zip(results["files"], results["jobs"])):
+            invoice_no = values["invoice_no"]
+            report = reports.get(invoice_no)
+            c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
+            c1.write(f"{invoice_no} · {values['driver']}")
+            c2.download_button("Documents", documents, file_name=file_name, mime="application/pdf",
+                               key=f"insp_documents_{n}")
+            if report:
+                folder = insp.safe_name(invoice_no)
+                c3.download_button("Inspection report", report, file_name=f"{folder}_inspection_report.pdf",
+                                   mime="application/pdf", key=f"insp_report_{n}")
+                c4.download_button("Combined", combined_pdf(documents, report),
+                                   file_name=f"{folder}_with_inspection.pdf", mime="application/pdf",
+                                   key=f"insp_combined_{n}")
+            else:
+                c3.caption("No report")
