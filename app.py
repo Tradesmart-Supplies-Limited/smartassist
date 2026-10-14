@@ -80,27 +80,31 @@ with st.container(border=True):
         st.error(f"This Excel file cannot be read ({error}).", icon=":material/error:")
         st.stop()
 
-    c1, c2 = st.columns(2)
-    sheet_name = c1.selectbox("Sheet", list(raw_sheets))
+    sheet_name = st.selectbox("Sheet", list(raw_sheets))
     raw = raw_sheets[sheet_name]
     if len(raw) < 2:
         st.warning("This sheet is empty.", icon=":material/warning:")
         st.stop()
 
-    header_row = c2.number_input(
+    # The row with the column titles is found automatically. The manual choice is inside the
+    # closed "Column matching" box, which opens by itself when a column cannot be found.
+    detected_columns = list(clean_sheet(raw, detect_header_row(raw)).columns)
+    detected_missing = any(v is None for k, v in guess_columns(detected_columns).items() if k not in OPTIONAL)
+    matching = st.expander("Column matching (open to correct it)", expanded=detected_missing,
+                           icon=":material/view_column:")
+    header_row = matching.number_input(
         "Row that contains the column titles (the first row is 1)",
         min_value=1, max_value=len(raw), value=detect_header_row(raw) + 1,
         key=f"header_{xl_file.name}_{sheet_name}",
     ) - 1
     table = clean_sheet(raw, int(header_row))
     columns = list(table.columns)
-    st.caption(f"{len(table)} rows found under the titles: {', '.join(columns)}")
+    matching.caption(f"{len(table)} rows found under the titles: {', '.join(columns)}")
 
     guess = guess_columns(columns)
     mapping = {}
     missing = [FIELDS[k][0] for k in FIELDS if guess[k] is None and k not in OPTIONAL]
-    with st.expander("Column matching (open to correct it)", expanded=bool(missing),
-                     icon=":material/view_column:"):
+    with matching:
         cols = st.columns(3)
         for n, (key, (label, _names)) in enumerate(FIELDS.items()):
             options = [NO_COLUMN] + columns
@@ -317,7 +321,6 @@ with st.container(border=True):
     jobs = []       # (file name, values) for every truck that will be made
     rows = []       # the table shown to the manager
     statuses = []   # the status text of every truck, used for the counts
-    ready_tonnage = Decimal("0")
     for truck in trucks:
         tonnage = truck.tonnage if tonnage_from_excel else fixed_tonnage
         packages = truck.packages if packages_from_excel else fixed_packages
@@ -334,7 +337,6 @@ with st.container(border=True):
             file_name = re.sub(r"[^A-Za-z0-9._-]", "_", truck.invoice_no) + ".pdf"
             jobs.append((file_name, values))
             total = values["total"]
-            ready_tonnage += tonnage
             status = "Warning: " + "; ".join(truck.warnings) if truck.warnings else "OK"
         statuses.append(status)
         rows.append({
@@ -389,14 +391,9 @@ with st.container(border=True):
 
 # Summary tiles (drawn above Step 3, in the space kept for them).
 with tiles:
-    t1, t2, t3, t4, t5 = st.columns(5)
+    t1, t2, _ = st.columns([1, 1, 3])
     t1.metric("Trucks found", len(trucks), border=True)
     t2.metric("Ready", len(jobs), border=True)
-    t3.metric("Need attention", warned + waiting, border=True,
-              help="Warnings (truck is still made) and trucks waiting for a clearance agent.")
-    t4.metric("Skipped", skipped + excluded, border=True,
-              help="Errors in the Excel, plus trucks excluded by an instruction.")
-    t5.metric("Total tonnage (ready)", f"{two_decimals(ready_tonnage)} MT", border=True)
 
 # ---------------- Step 4: generate ----------------
 with st.container(border=True):
