@@ -11,6 +11,18 @@ the Excel or calculated by the program.
 Double-click **start_doculoop.bat**. A black window opens, then your browser shows DocuLoop.
 Keep the black window open while you work. Close it when you have finished.
 
+## Start from VS Code (instead of the .bat file)
+1. **File → Open Folder** → choose the DocuLoop folder.
+2. **Terminal → New Terminal**.
+3. Switch to DocuLoop's own Python (do this every time you open a new terminal):
+   `.venv\Scripts\activate` (the line then starts with `(.venv)`)
+4. Start the app: `streamlit run app.py`
+5. Open the address it shows (e.g. `http://localhost:8501`). Press **Ctrl+C** in the terminal to stop.
+
+Skip step 3 and `streamlit run app.py` uses the wrong Python and shows "No module named 'fontTools'".
+If step 3 says "running scripts is disabled", use this instead of steps 3-4:
+`.venv\Scripts\python -m streamlit run app.py`
+
 ## The four steps
 1. **Sample PDF.** Upload the sample (for example `YS-BMS10-288.pdf`). A green message confirms
    the layout was recognised. A red message means this is not the expected sample.
@@ -47,11 +59,11 @@ The same horse used twice; empty passport number; empty exit border.
 - **Changed a setting after generating:** click "Generate PDFs" again; a yellow message reminds you.
 
 ## First-time setup (once, needs internet)
-Open a terminal in this folder and run:
+1. Install Python 3.12 from https://www.python.org/downloads/ and tick "Add python.exe to PATH".
+2. Put the DocuLoop folder in a short place such as `C:\DocuLoop` (not deep inside other folders).
+3. Double-click **install_doculoop.bat** and wait for "DocuLoop is installed".
+4. Double-click **start_doculoop.bat**.
 
-```
-py -3.12 -m venv .venv
-.venv\Scripts\python -m pip install streamlit pandas openpyxl pymupdf fonttools pytest
-```
+The sample PDF and the Excel are not part of the program: bring them yourself and upload them in the app.
 
 To check the program: `.venv\Scripts\python -m pytest`
