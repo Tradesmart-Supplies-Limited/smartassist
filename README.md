@@ -35,8 +35,9 @@ If step 3 says "running scripts is disabled", use this instead of steps 3-4:
 - After **Generate PDFs**: **Download everything (ZIP)**, then one truck at a time, then the preview.
 
 ## The four steps
-1. **Sample PDF.** Upload the sample (for example `YS-BMS10-288.pdf`). A green message confirms
-   the layout was recognised. A red message means this is not the expected sample.
+1. **Sample PDF.** Upload any finished truck PDF in this client's format (for example
+   `YS-BMS10-288.pdf` or `YS-BMS10-291.pdf`). A green tick confirms the layout was recognised. A red
+   message lists what does not match (for example a missing title or a value in the wrong place).
 2. **Loading-order Excel.** Upload the Excel. Check the sheet and the row that holds the column
    titles (normally row 5). Open "Column matching" only if a column was not recognised.
 3. **Job details.**

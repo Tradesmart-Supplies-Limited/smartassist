@@ -5,6 +5,7 @@ and write the new text at the same place, size, weight and colour.
 """
 import io
 import os
+import re
 from decimal import Decimal, ROUND_HALF_UP
 
 try:
@@ -143,6 +144,14 @@ def _cell_edges(page, span):
     return left, right
 
 
+def _span_at(spans, x, y, align):
+    """The one text on this line (middle height y) that is centred on x, or ends at x for "right"."""
+    found = [s for s in spans if abs((s["bbox"][1] + s["bbox"][3]) / 2 - y) <= SPOT_TOLERANCE + 1 and
+             (abs(s["bbox"][2] - x) <= SPOT_TOLERANCE if align == "right"
+              else s["bbox"][0] - 1 <= x <= s["bbox"][2] + 1)]
+    return found[0] if len(found) == 1 else None
+
+
 def load_template(pdf_bytes):
     """Check the sample and prepare it for filling. Raises LayoutError if it does not match.
 
@@ -163,19 +172,24 @@ def load_template(pdf_bytes):
     base.insert_pdf(source, from_page=0, to_page=layout.PAGES - 1)
 
     spots, sample, problems = [], {}, []
+    for page_no, title in enumerate(layout.TITLES):
+        if title not in " ".join(base[page_no].get_text().split()):
+            problems.append(f"page {page_no + 1}: the title '{title}' is missing")
     spans_by_page = [_page_spans(page) for page in base]
     for page_no, x, y, key, align in layout.SPOTS:
         page = base[page_no]
-        span = next((s for s in spans_by_page[page_no]
-                     if abs(s["bbox"][0] - x) <= SPOT_TOLERANCE and abs(s["bbox"][1] - y) <= SPOT_TOLERANCE), None)
+        span = _span_at(spans_by_page[page_no], x, y, align)
         where = f"page {page_no + 1}, {key}"
         if span is None:
             problems.append(f"{where}: nothing found at the expected place")
             continue
         text = span["text"].strip()
-        expected = layout.SAMPLE_VALUES.get(key, sample.get(key, text))
-        if text != expected:
-            problems.append(f"{where}: found '{text}' but expected '{expected}'")
+        if key in layout.FORMATS and not re.fullmatch(layout.FORMATS[key], text):
+            example = layout.SAMPLE_VALUES.get(key, "")
+            problems.append(f"{where}: found '{text}', which is not in the expected format (like '{example}')")
+            continue
+        if key in sample and text != sample[key]:
+            problems.append(f"{where}: found '{text}' but the same field elsewhere shows '{sample[key]}'")
             continue
         sample[key] = text
 

@@ -141,3 +141,18 @@ def test_unknown_border_needs_a_confirmed_agent():
     chosen = document_values(other, Decimal("40"), Decimal("40"), "12-Oct-26", layout.DEFAULT_PRICES,
                              "a", "b", agent=layout.AGENTS["MOKAMBO"])
     assert chosen["agent_contact"] == "Contact person :Pacafic"
+
+
+def test_another_truck_of_the_same_format_is_accepted_as_sample():
+    from conftest import make_pretend_sample
+    other = load_template(make_pretend_sample({"invoice_no": "XX-TEST-1234", "driver": "ANOTHER DRIVER NAME",
+                                               "date": "03-Nov-26", "packages": "29", "weight": "42MT"}))
+    assert other["sample"]["invoice_no"] == "XX-TEST-1234"
+    assert other["sample"]["driver"] == "ANOTHER DRIVER NAME"
+    assert len(other["spots"]) == len(layout.SPOTS)
+
+
+def test_a_value_in_the_wrong_format_is_refused():
+    from conftest import make_pretend_sample
+    with pytest.raises(LayoutError, match="quantity"):
+        load_template(make_pretend_sample({"quantity": "forty tonnes"}))

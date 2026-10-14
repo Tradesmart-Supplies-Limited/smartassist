@@ -29,8 +29,17 @@ The sample PDF IS the template. Never redraw lines or logos. With PyMuPDF:
 5. Embed `C:\Windows\Fonts\arial.ttf` / `arialbd.ttf` (fallback helv/hebo), then `subset_fonts()` in try/except.
    Each truck PDF should be well under 300 KB.
 
-The fields live in one table module (`core\layout.py`). At load time every old text must be found at its
-spot, otherwise show a clear "sample does not match" error.
+The fields live in one table module (`core\layout.py`). Since 2026-10-14 (owner's request) ANY truck's PDF
+of this format is accepted as the sample, not only YS-BMS10-288. At load time:
+- each spot is found by the middle of its text (x = centre, or the right edge for "right"; y = middle
+  height), so names of any length match;
+- every value must fit its `layout.FORMATS` pattern (invoice no., date, "40.00 MT", "$2,800.00", ...);
+  names, plates, border and wording only have to be present;
+- a value repeated in several spots must be the same everywhere, and the 3 page titles must be there;
+- otherwise show a clear "does not match" error listing what is wrong.
+The "sample shows X MT / Y packages" notice reads those figures from the uploaded sample.
+Checked on YS-BMS10-288 to 293: all accepted, each rebuilds its own truck with identical text, and an
+invented truck gives the same text whichever of them is the sample.
 
 Things learned while building:
 - The sample's own font is Inter; replaced values are written in Arial as planned.

@@ -372,14 +372,16 @@ with st.container(border=True):
         st.error("Skipped trucks get no PDF. Correct them in the Excel and upload it again.", icon=":material/error:")
 
     # Tell the manager when the sample shows other figures than the Excel for the same invoice.
+    sample_tonnage = Decimal(sample["weight"][:-2])        # "40MT" -> 40
+    sample_packages = Decimal(sample["packages"])
     for truck in trucks:
         if truck.invoice_no != sample["invoice_no"] or truck.errors:
             continue
         differences = []
-        if tonnage_from_excel and truck.tonnage != layout.SAMPLE_TONNAGE:
-            differences.append(f"{truck.tonnage} MT (the sample shows {layout.SAMPLE_TONNAGE} MT)")
-        if packages_from_excel and truck.packages != layout.SAMPLE_PACKAGES:
-            differences.append(f"{truck.packages} packages (the sample shows {layout.SAMPLE_PACKAGES})")
+        if tonnage_from_excel and truck.tonnage != sample_tonnage:
+            differences.append(f"{truck.tonnage} MT (the sample shows {sample_tonnage} MT)")
+        if packages_from_excel and truck.packages != sample_packages:
+            differences.append(f"{truck.packages} packages (the sample shows {sample_packages})")
         if differences:
             st.info(f"Notice: for {truck.invoice_no} the Excel says " + " and ".join(differences) +
                     ". The Excel figures will be used. Choose 'Fixed figures for every truck' above "
