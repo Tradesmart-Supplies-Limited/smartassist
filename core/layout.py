@@ -101,6 +101,10 @@ AGENTS = {
     "SAKANIA": {"name": "Oscar Levite", "mobile": "+243 997 595 381"},
 }
 
+# This client's rule: every truck is printed at 40 MT (packages still come from the Excel).
+# The manager can switch to the Excel's own tonnage or to fixed figures in Step 3.
+CLIENT_TONNAGE = Decimal("40")
+
 # The sample's own figures as numbers (used for the "differs from the Excel" notice).
 SAMPLE_TONNAGE = Decimal("40")
 SAMPLE_PACKAGES = Decimal("40")

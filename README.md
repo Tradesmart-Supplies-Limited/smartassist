@@ -32,8 +32,9 @@ If step 3 says "running scripts is disabled", use this instead of steps 3-4:
    - Date on the documents (today unless you change it), written like `12-Oct-26`.
    - Wording of the two freight lines.
    - Prices in USD per MT: coal 70, freight line 1 88, freight line 2 140, insurance 2.
-   - Quantities: normally taken from the Excel for each truck. Choose "Fixed figures for every
-     truck" to give every truck the same tonnage and number of packages.
+   - Quantities: by default every truck is printed at **40 MT**, with the number of packages from
+     the Excel (this client's rule). You can switch to "From the Excel" (each truck's own tonnage
+     and packages) or "Fixed figures for every truck" (the same tonnage and packages for all).
    - **Read the data check table.** "OK" trucks are ready. "Warning" trucks are made, but look at
      the reason. "SKIPPED" trucks get no PDF: correct the Excel and upload it again.
 4. **Generate.** Click "Generate PDFs". Then download everything as one ZIP, or one truck at a
@@ -94,7 +95,8 @@ commercial use.
 ## How the figures are worked out
 - Amount = quantity x price, rounded to cents. Total = the sum of the four amounts.
 - Example for 42 MT: 2,940.00 + 3,696.00 + 5,880.00 + 84.00 = 12,600.00.
-- "42T" in the Excel becomes 42.00 MT on the invoice and 42MT on the packing list.
+- By default the tonnage is 40 MT for every truck. With "From the Excel", "42T" in the Excel
+  becomes 42.00 MT on the invoice and 42MT on the packing list.
 - An empty or "N/A" second trailer is written as NIL.
 
 ## What stops a truck (errors)

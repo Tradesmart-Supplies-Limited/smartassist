@@ -59,8 +59,11 @@ Things learned while building:
 ## Rules
 - Prices USD/MT: coal 70, freight 1 88, freight 2 140, insurance 2 (editable in the UI).
 - Amount = quantity x price with `Decimal`, `ROUND_HALF_UP`. Total = sum of the four amounts.
-- Quantities come from the Excel first (tonnage parsed from "42T"). The UI also offers fixed figures for
-  every truck, and a notice where the sample's figures differ from the Excel's for the same invoice no.
+- Quantities (changed on the owner's request, 2026-10-14): the default is this client's rule,
+  `layout.CLIENT_TONNAGE` = 40 MT for every truck with packages from the Excel; an unreadable Excel
+  tonnage is then not an error. A switch offers "From the Excel" (tonnage parsed from "42T") and
+  fixed figures for every truck. A notice shows where the sample's figures differ from the Excel's
+  figures that are actually used, for the same invoice no.
 - Date format "12-Oct-26", English month names typed in code (no locale). Default today, editable.
 - NEVER use an AI model to produce a document value. Everything is copied or calculated. No network calls.
 - Validation: empty invoice no./driver/horse, unreadable tonnage, duplicate invoice no. = error (truck
@@ -107,7 +110,7 @@ Things learned while building:
 - Only make changes that were asked for. Plain, readable code with short comments (the owner is a beginner).
 
 ## Stop and ask before
-- Deleting any file, adding a dependency, changing a price / amount formula / the Excel-first quantity
+- Deleting any file, adding a dependency, changing a price / amount formula / the 40 MT client quantity
   rule, or touching anything outside the project folder.
 
 ## Acceptance

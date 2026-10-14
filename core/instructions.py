@@ -11,6 +11,7 @@ import os
 import re
 from datetime import date, datetime, timedelta
 
+from core import layout
 from core.pdf_builder import format_date
 
 # ---------- sanity limits ----------
@@ -25,6 +26,7 @@ KEY_PRICES = {"coal": "price_coal", "freight_1": "price_freight1",
               "freight_2": "price_freight2", "insurance": "price_insurance"}
 KEY_LABELS = {"freight_1": "freight1_text", "freight_2": "freight2_text"}
 KEY_SOURCE = "source"
+SOURCE_CLIENT = f"{layout.CLIENT_TONNAGE} MT for every truck, packages from the Excel (this client's rule)"
 SOURCE_EXCEL = "From the Excel (each truck's own figures)"
 SOURCE_FIXED = "Fixed figures for every truck"
 KEY_TONNAGE = "fixed_tonnage"

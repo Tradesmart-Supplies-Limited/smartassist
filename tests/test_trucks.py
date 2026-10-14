@@ -76,6 +76,16 @@ def test_warnings_do_not_skip_the_truck():
     assert trucks[1].warnings == ["Horse H1 appears more than once"]
 
 
+def test_client_rule_does_not_need_excel_tonnage_but_needs_packages():
+    trucks = [Truck(row=6, invoice_no="A-1", driver="D", horse="H", passport="P", border="B",
+                    tonnage_text="heavy", packages=Decimal("29")),
+              Truck(row=7, invoice_no="A-2", driver="D", horse="H2", passport="P", border="B",
+                    tonnage_text="heavy", packages_text="many")]
+    check_trucks(trucks, figures_from_excel=True, tonnage_from_excel=False)
+    assert trucks[0].errors == []
+    assert trucks[1].errors == ["No. of packages cannot be read: 'many'"]
+
+
 def test_fixed_figures_do_not_need_excel_tonnage():
     trucks = [Truck(row=6, invoice_no="A-1", driver="D", horse="H", passport="P", border="B")]
     check_trucks(trucks, figures_from_excel=True)

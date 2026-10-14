@@ -126,7 +126,7 @@ DEFAULTS = {
     ins.KEY_DATE: date.today(),
     ins.KEY_LABELS["freight_1"]: layout.DEFAULT_FREIGHT1,
     ins.KEY_LABELS["freight_2"]: layout.DEFAULT_FREIGHT2,
-    ins.KEY_SOURCE: ins.SOURCE_EXCEL,
+    ins.KEY_SOURCE: ins.SOURCE_CLIENT,
     ins.KEY_TONNAGE: 40.0,
     ins.KEY_PACKAGES: 40,
 }
@@ -222,10 +222,14 @@ for col, (item, name) in zip(st.columns(4), PRICE_NAMES.items()):
 
 st.subheader("Quantities")
 source = st.radio("Where do the tonnage and number of packages come from?",
-                  [ins.SOURCE_EXCEL, ins.SOURCE_FIXED], key=ins.KEY_SOURCE)
-from_excel = source == ins.SOURCE_EXCEL
-fixed_tonnage = fixed_packages = None
-if not from_excel:
+                  [ins.SOURCE_CLIENT, ins.SOURCE_EXCEL, ins.SOURCE_FIXED], key=ins.KEY_SOURCE)
+tonnage_from_excel = source == ins.SOURCE_EXCEL
+packages_from_excel = source in (ins.SOURCE_EXCEL, ins.SOURCE_CLIENT)
+fixed_tonnage = layout.CLIENT_TONNAGE if source == ins.SOURCE_CLIENT else None
+fixed_packages = None
+if source == ins.SOURCE_CLIENT:
+    st.caption(f"Every truck is printed at {layout.CLIENT_TONNAGE} MT; the Excel's tonnage column is not used.")
+if source == ins.SOURCE_FIXED:
     f1, f2, _ = st.columns(3)
     fixed_tonnage = Decimal(f"{f1.number_input('Tonnage (MT) for every truck', min_value=0.01, step=0.5, format='%.2f', key=ins.KEY_TONNAGE):.2f}")
     fixed_packages = Decimal(int(f2.number_input("Packages for every truck", min_value=1, step=1,
@@ -233,7 +237,7 @@ if not from_excel:
 
 # ---------------- Data check ----------------
 st.subheader("Data check")
-check_trucks(trucks, figures_from_excel=from_excel)
+check_trucks(trucks, figures_from_excel=packages_from_excel, tonnage_from_excel=tonnage_from_excel)
 excluded_rows = set(st.session_state.get(ins.KEY_EXCLUDED, []))
 only_rows = st.session_state.get(ins.KEY_ONLY)
 
@@ -262,8 +266,8 @@ if unknown_borders:
 jobs = []       # (file name, values) for every truck that will be made
 rows = []       # the table shown to the manager
 for truck in trucks:
-    tonnage = truck.tonnage if from_excel else fixed_tonnage
-    packages = truck.packages if from_excel else fixed_packages
+    tonnage = truck.tonnage if tonnage_from_excel else fixed_tonnage
+    packages = truck.packages if packages_from_excel else fixed_packages
     total = ""
     agent = agent_for_border(truck.border) or confirmed_agents.get(truck.border)
     if left_out(truck):
@@ -300,14 +304,18 @@ if skipped:
     st.error("Skipped trucks get no PDF. Correct them in the Excel and upload it again.")
 
 # Tell the manager when the sample shows other figures than the Excel for the same invoice.
-if from_excel:
-    for truck in trucks:
-        if truck.invoice_no == sample["invoice_no"] and not truck.errors and (
-                truck.tonnage != layout.SAMPLE_TONNAGE or truck.packages != layout.SAMPLE_PACKAGES):
-            st.info(f"Notice: for {truck.invoice_no} the sample PDF shows {layout.SAMPLE_TONNAGE} MT and "
-                    f"{layout.SAMPLE_PACKAGES} packages, but the Excel says {truck.tonnage} MT and "
-                    f"{truck.packages} packages. The Excel figures will be used. "
-                    "Choose 'Fixed figures for every truck' above if the sample's figures are the right ones.")
+for truck in trucks:
+    if truck.invoice_no != sample["invoice_no"] or truck.errors:
+        continue
+    differences = []
+    if tonnage_from_excel and truck.tonnage != layout.SAMPLE_TONNAGE:
+        differences.append(f"{truck.tonnage} MT (the sample shows {layout.SAMPLE_TONNAGE} MT)")
+    if packages_from_excel and truck.packages != layout.SAMPLE_PACKAGES:
+        differences.append(f"{truck.packages} packages (the sample shows {layout.SAMPLE_PACKAGES})")
+    if differences:
+        st.info(f"Notice: for {truck.invoice_no} the Excel says " + " and ".join(differences) +
+                ". The Excel figures will be used. Choose 'Fixed figures for every truck' above "
+                "if the sample's figures are the right ones.")
 
 # ---------------- Step 4: generate ----------------
 st.header("Step 4: Generate")

@@ -107,12 +107,15 @@ def read_trucks(df, mapping, header_row):
     return trucks
 
 
-def check_trucks(trucks, figures_from_excel=True):
+def check_trucks(trucks, figures_from_excel=True, tonnage_from_excel=None):
     """Fill in each truck's errors and warnings.
 
     figures_from_excel=False means the user chose fixed figures for every truck,
     so the Excel tonnage and packages are not used and not checked.
+    tonnage_from_excel=False means only the Excel tonnage is not used (this client's 40 MT rule).
     """
+    if tonnage_from_excel is None:
+        tonnage_from_excel = figures_from_excel
     invoice_count, horse_count = {}, {}
     for t in trucks:
         invoice_count[t.invoice_no] = invoice_count.get(t.invoice_no, 0) + 1
@@ -130,9 +133,9 @@ def check_trucks(trucks, figures_from_excel=True):
             t.errors.append("Horse Reg is empty")
         elif horse_count[t.horse] > 1:
             t.warnings.append(f"Horse {t.horse} appears more than once")
+        if tonnage_from_excel and t.tonnage is None:
+            t.errors.append(f"Tonnage cannot be read: '{t.tonnage_text}'")
         if figures_from_excel:
-            if t.tonnage is None:
-                t.errors.append(f"Tonnage cannot be read: '{t.tonnage_text}'")
             if t.packages is None:
                 t.errors.append(f"No. of packages cannot be read: '{t.packages_text}'")
         if not t.passport:
