@@ -171,7 +171,7 @@ for key, value in DEFAULTS.items():
     st.session_state.setdefault(key, value)
 
 # Example orders shown as chips; clicking one fills the order box (it is not applied).
-EXAMPLES = ["Skip truck 3", "Coal price is 75", "Date them 15 October", "Only make trucks 1 to 5"]
+EXAMPLES = ["Coal price is 75", "Only make trucks 1 to 5"]
 
 
 def apply_pending():
@@ -262,11 +262,16 @@ with step3_card:
     freight1 = c2.text_input("Freight line 1 wording", key=ins.KEY_LABELS["freight_1"]).strip()
     freight2 = c3.text_input("Freight line 2 wording", key=ins.KEY_LABELS["freight_2"]).strip()
 
-    st.markdown("##### :material/payments: Prices (USD per MT)")
+    st.markdown("##### :material/payments: Coal price (USD per MT)")
     prices = {}
-    for col, (item, name) in zip(st.columns(4), PRICE_NAMES.items()):
-        typed_price = col.number_input(ins.ITEM_NAMES[item], min_value=0.0, step=1.0, format="%.2f",
-                                       key=ins.KEY_PRICES[item])
+    coal_column, _ = st.columns([1, 3])
+    for item, name in PRICE_NAMES.items():
+        if item == "coal":
+            typed_price = coal_column.number_input(ins.ITEM_NAMES[item], min_value=0.0, step=1.0, format="%.2f",
+                                                   key=ins.KEY_PRICES[item])
+        else:
+            # Not shown to the manager: the default price, or one changed by a typed instruction.
+            typed_price = st.session_state[ins.KEY_PRICES[item]]
         prices[name] = Decimal(f"{typed_price:.2f}")
 
     st.markdown("##### :material/scale: Quantities")
@@ -284,9 +289,7 @@ with step3_card:
         fixed_packages = Decimal(int(f2.number_input("Packages for every truck", min_value=1, step=1,
                                                      key=ins.KEY_PACKAGES)))
     ui.step_header(step3, 3, "Job details", done=True,
-                   summary=f"Date {date_text} · coal ${prices['coal']} · freight ${prices['freight1']} / "
-                           f"${prices['freight2']} · insurance ${prices['insurance']} · "
-                           f"{source.split(' (')[0]}")
+                   summary=f"Date {date_text} · coal ${prices['coal']} · {source.split(' (')[0]}")
 
 # ---------------- Data check ----------------
 check_trucks(trucks, figures_from_excel=packages_from_excel, tonnage_from_excel=tonnage_from_excel)

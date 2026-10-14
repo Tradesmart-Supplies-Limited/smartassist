@@ -66,7 +66,9 @@ Things learned while building:
   packages "40" right-aligned against the fixed word BAGS; net and gross weight "40MT" ("42MT", "42.5MT").
 
 ## Rules
-- Prices USD/MT: coal 70, freight 1 88, freight 2 140, insurance 2 (editable in the UI).
+- Prices USD/MT: coal 70, freight 1 88, freight 2 140, insurance 2. Only coal is shown and editable
+  in the UI (owner's request, 2026-10-14); the other three keep their session_state keys and defaults
+  and can still be changed by a typed instruction.
 - Amount = quantity x price with `Decimal`, `ROUND_HALF_UP`. Total = sum of the four amounts.
 - Quantities (changed on the owner's request, 2026-10-14): the default is this client's rule,
   `layout.CLIENT_TONNAGE` = 40 MT for every truck with packages from the Excel; an unreadable Excel

@@ -43,7 +43,8 @@ If step 3 says "running scripts is disabled", use this instead of steps 3-4:
 3. **Job details.**
    - Date on the documents (today unless you change it), written like `12-Oct-26`.
    - Wording of the two freight lines.
-   - Prices in USD per MT: coal 70, freight line 1 88, freight line 2 140, insurance 2.
+   - Coal price in USD per MT (70 unless you change it). The other prices are fixed and not shown:
+     freight line 1 88, freight line 2 140, insurance 2 (a typed instruction can still change them).
    - Quantities: by default every truck is printed at **40 MT**, with the number of packages from
      the Excel (this client's rule). You can switch to "From the Excel" (each truck's own tonnage
      and packages) or "Fixed figures for every truck" (the same tonnage and packages for all).
