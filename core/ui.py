@@ -69,11 +69,11 @@ def apply_style():
 
 def header(assistant_ok, model):
     """The top band: logo, name, subtitle, and the assistant status on the right."""
-    left, right = st.columns([5, 2], vertical_alignment="center")
+    left, right, logos = st.columns([5, 2, 2], vertical_alignment="center")
     left.markdown(
         f'<div class="dl-header" style="color:{COLORS["accent"]}">{LOGO}<div>'
         '<h1>DocuLoop</h1><p>Road manifest, commercial invoice and packing list from your Excel sheet</p>'
-        f'</div>{_logos()}</div>', unsafe_allow_html=True)
+        '</div></div>', unsafe_allow_html=True)
     with right:
         if assistant_ok:
             st.badge("Assistant ready", icon=":material/smart_toy:", color="green")
@@ -81,6 +81,7 @@ def header(assistant_ok, model):
             st.badge("Assistant offline", icon=":material/cloud_off:", color="gray")
         st.badge(f"Model {model}", icon=":material/memory:", color="blue")
         st.badge("Works offline", icon=":material/lock:", color="gray")
+    logos.markdown(_logos(), unsafe_allow_html=True)      # after the status badges, outside the band
 
 
 def step_header(place, number, title, done=False, summary=""):

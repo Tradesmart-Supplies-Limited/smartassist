@@ -26,8 +26,8 @@
 }
 .dl-header h1 { color: #FFFFFF; font-size: 1.6rem; margin: 0; padding: 0; line-height: 1.2; }
 .dl-header p { color: #FFFFFF; opacity: 0.92; margin: 2px 0 0 0; font-size: 0.95rem; }
-/* Company and OGEFREM logos, on a white tile right next to the name */
-.dl-logos { height: 92px; width: auto; margin-left: 24px; background: #FFFFFF; border-radius: 8px; padding: 4px 10px; }
+/* Company and OGEFREM logos, on a white tile after the status badges */
+.dl-logos { height: 92px; width: auto; max-width: 100%; background: #FFFFFF; border-radius: 8px; padding: 4px 10px; }
 
 /* Numbered step titles */
 .dl-step { display: flex; align-items: center; gap: 10px; margin: 0 0 2px 0; }
