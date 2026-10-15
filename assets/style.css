@@ -45,6 +45,25 @@
 /* Still, for anyone who asked Windows for less motion. */
 @media (prefers-reduced-motion: reduce) { .dl-ticker span { animation: none; left: 0; } }
 
+/* Opening screen: the logo beats twice like a heart, then everything fades away (about 2.5 s). */
+.dl-splash {
+  position: fixed; inset: 0; z-index: 1000000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: #FFFFFF; animation: dl-splash-out 0.5s ease 2s forwards;
+}
+.dl-splash .dl-logos { height: 150px; animation: dl-beat 1s ease-in-out 2; }
+.dl-splash-name { color: var(--dl-accent); font-size: 1.5rem; font-weight: 700; letter-spacing: 0.04em; }
+@keyframes dl-beat {
+  0%, 30%, 60%, 100% { transform: scale(1); }
+  15% { transform: scale(1.15); }
+  45% { transform: scale(1.08); }
+}
+@keyframes dl-splash-out { to { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) {
+  .dl-splash .dl-logos { animation: none; }
+  .dl-splash { animation-delay: 0.6s; }
+}
+
 /* Numbered step titles */
 .dl-step { display: flex; align-items: center; gap: 10px; margin: 0 0 2px 0; }
 .dl-step .dl-num {

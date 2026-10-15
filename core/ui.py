@@ -68,6 +68,12 @@ def _logos():
     return f'<img class="dl-logos" src="data:image/png;base64,{data}" alt="Tradesmart Supplies Limited">'
 
 
+def splash():
+    """The opening screen: the logo beats twice, then the screen fades away to the app."""
+    st.markdown(f'<div class="dl-splash" aria-hidden="true">{_logos()}<div class="dl-splash-name">DocuLoop</div></div>',
+                unsafe_allow_html=True)
+
+
 def apply_style():
     """Load assets/style.css once per page, with the theme colours as CSS variables."""
     with open(os.path.join(PROJECT, "assets", "style.css"), encoding="utf-8") as f:

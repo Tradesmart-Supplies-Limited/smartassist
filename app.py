@@ -28,6 +28,11 @@ ERROR_LOG = os.path.join(HERE, "output", "error_log.txt")
 st.set_page_config(page_title="DocuLoop", page_icon=":material/local_shipping:", layout="wide")
 ui.apply_style()
 
+# The opening screen with the beating logo, once per visit (not on every click).
+if not st.session_state.get("splash_shown"):
+    ui.splash()
+    st.session_state.splash_shown = True
+
 
 def log_error(where):
     """Write the technical details of an unexpected problem to output/error_log.txt (never on screen)."""
