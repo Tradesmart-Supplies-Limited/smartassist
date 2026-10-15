@@ -115,5 +115,5 @@ def status_of(text):
 
 def footer():
     st.markdown(f'<div class="dl-footer">© 2026 Tradesmart Supplies Limited. All rights reserved.<br>'
-                f'Developed by Maurille Khonde · DocuLoop v{VERSION} · '
+                f'Developed by Tradesmart Supplies Limited · DocuLoop v{VERSION} · '
                 'Works within the Tradesmart Supplies Limited Network</div>', unsafe_allow_html=True)
