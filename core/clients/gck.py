@@ -4,6 +4,13 @@
 GCK's sample PDF and loading-order Excel were not available on 2026-10-15, so nothing about GCK has
 been guessed. The app shows GCK in the client choice but refuses to build until this profile is
 filled in from a real GCK sample and Excel (same names as in bms.py), and READY is set to True.
+
+OWNER'S RULE FOR GCK (2026-10-15): what the Excel and the sample give is what is kept.
+- Tonnage is used exactly as the Excel gives it (42 stays 42, 43 stays 43): no fixed client
+  tonnage like BMS's 40 MT, so CLIENT_TONNAGE stays None and quantities come from the Excel.
+- The person named for the border (clearance agent or contact) is kept as the sample / Excel
+  shows it. It is NOT replaced by exit border like BMS's AGENTS table, unless the owner instructs it.
+- No other value is changed or rounded; everything is copied as given.
 """
 from decimal import Decimal
 

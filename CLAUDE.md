@@ -84,6 +84,10 @@ Things learned while building:
 - `core\clients\bms.py` is the BMS profile: id, name, READY, PDF and Excel fingerprints, Excel FIELDS /
   OPTIONAL, PRICE_ITEMS / FREIGHT_LINES / EXAMPLES for the assistant, PAGE_NAMES, and the fields table,
   formats, agents, client tonnage and default prices that used to be `core\layout.py`.
+- GCK RULE (owner, 2026-10-15): what GCK's Excel and sample give is what is kept. Tonnage exactly as
+  the Excel says (42 stays 42, 43 stays 43; no 40 MT rule, `CLIENT_TONNAGE = None`, default quantity
+  source = the Excel). The person named for the border / clearance agent stays as the sample or Excel
+  shows it (no AGENTS swap by border) unless the owner instructs otherwise. Nothing else is changed.
 - `core\clients\gck.py` is a PLACEHOLDER (READY = False): GCK's sample PDF and Excel were not available.
   Never guess GCK values: fill this profile from real GCK files, then set READY and write the GCK test
   in `tests\test_clients.py` (currently skipped).
