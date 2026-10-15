@@ -68,20 +68,16 @@ def apply_style():
 
 
 def header(assistant_ok, model):
-    """The top band: logo, name, subtitle, and the assistant status on the right."""
-    left, right, logos = st.columns([5, 2, 2], vertical_alignment="center")
-    left.markdown(
+    """The top: the navy band running into the logos, and a small status ticker under it."""
+    assistant = "✅ Assistant ready" if assistant_ok else "⛔ Assistant offline"
+    status = f"{assistant} · Model {html.escape(model)} · 🔒 Works offline"
+    st.markdown(
+        '<div class="dl-top">'
         f'<div class="dl-header" style="color:{COLORS["accent"]}">{LOGO}<div>'
         '<h1>DocuLoop</h1><p>Road manifest, commercial invoice and packing list from your Excel sheet</p>'
-        '</div></div>', unsafe_allow_html=True)
-    with right:
-        if assistant_ok:
-            st.badge("Assistant ready", icon=":material/smart_toy:", color="green")
-        else:
-            st.badge("Assistant offline", icon=":material/cloud_off:", color="gray")
-        st.badge(f"Model {model}", icon=":material/memory:", color="blue")
-        st.badge("Works offline", icon=":material/lock:", color="gray")
-    logos.markdown(_logos(), unsafe_allow_html=True)      # after the status badges, outside the band
+        f'</div></div><div class="dl-logo-tile">{_logos()}</div></div>'
+        f'<div class="dl-ticker" role="status"><span>{status}</span></div>',
+        unsafe_allow_html=True)
 
 
 def step_header(place, number, title, done=False, summary=""):

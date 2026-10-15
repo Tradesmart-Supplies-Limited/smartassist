@@ -26,8 +26,22 @@
 }
 .dl-header h1 { color: #FFFFFF; font-size: 1.6rem; margin: 0; padding: 0; line-height: 1.2; }
 .dl-header p { color: #FFFFFF; opacity: 0.92; margin: 2px 0 0 0; font-size: 0.95rem; }
-/* Company and OGEFREM logos, on a white tile after the status badges */
-.dl-logos { height: 92px; width: auto; max-width: 100%; background: #FFFFFF; border-radius: 8px; padding: 4px 10px; }
+/* The navy band runs straight into the white logo tile: they meet with no gap. */
+.dl-top { display: flex; align-items: stretch; }
+.dl-top .dl-header { flex: 1; border-radius: 10px 0 0 10px; }
+.dl-logo-tile {
+  display: flex; align-items: center; padding: 0 12px; background: #FFFFFF;
+  border: 2px solid var(--dl-accent); border-left: none; border-radius: 0 10px 10px 0;
+}
+.dl-logos { height: 78px; width: auto; }
+
+/* A small status line under the band that moves from left to right, like TV news. */
+.dl-ticker { position: relative; overflow: hidden; height: 1.3rem; margin-top: 4px;
+             font-size: 0.75rem; color: var(--dl-gray); }
+.dl-ticker span { position: absolute; white-space: nowrap; top: 0; animation: dl-ticker 22s linear infinite; }
+@keyframes dl-ticker { from { left: -45%; } to { left: 100%; } }
+/* Still, for anyone who asked Windows for less motion. */
+@media (prefers-reduced-motion: reduce) { .dl-ticker span { animation: none; left: 0; } }
 
 /* Numbered step titles */
 .dl-step { display: flex; align-items: center; gap: 10px; margin: 0 0 2px 0; }
