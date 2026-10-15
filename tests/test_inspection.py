@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Inspection reports: matching, checking, combining and zipping (invented data only)."""
 import io
 import zipfile

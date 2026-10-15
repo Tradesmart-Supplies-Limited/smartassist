@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Excel reading, column matching, parsing and validation (invented data only)."""
 from decimal import Decimal
 

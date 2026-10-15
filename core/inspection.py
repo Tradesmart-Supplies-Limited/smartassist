@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Optional inspection reports: match one PDF per truck, combine, and pack into a ZIP.
 
 Reports are never changed: their pages are copied as they are, after the truck's 3 pages.

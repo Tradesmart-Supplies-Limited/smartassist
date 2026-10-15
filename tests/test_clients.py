@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Client profiles, recognition from file content, and wrong pairings (invented data only)."""
 import glob
 import json

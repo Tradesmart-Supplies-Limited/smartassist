@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Typed orders ("skip truck 3", "coal is 75") turned into a fixed list of settings.
 
 The language model only proposes actions in a strict JSON shape. Everything else is done here,

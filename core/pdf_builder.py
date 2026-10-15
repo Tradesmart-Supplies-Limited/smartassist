@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Build one 3-page PDF per truck, using the sample PDF itself as the template.
 
 Nothing is redrawn. For each spot in the client's profile (core/clients/) we remove the old text

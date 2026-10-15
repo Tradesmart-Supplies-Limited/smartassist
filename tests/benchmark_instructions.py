@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Benchmark: the 25 typed orders against the real local model (needs Ollama running).
 
 Run:  .venv\\Scripts\\python tests\\benchmark_instructions.py

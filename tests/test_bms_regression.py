@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """BMS output must stay exactly as it was before the multi-client change.
 
 bms_reference.json was made with the old code (main 7e24cb2): every word and its position for 4 invented

@@ -1,4 +1,5 @@
 @echo off
+rem Copyright (c) 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 rem Starts DocuLoop and opens it in the web browser. Double-click this file.
 cd /d "%~dp0"
 

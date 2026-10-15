@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """DocuLoop: one 3-page PDF per truck, made from a client's sample PDF and loading-order Excel."""
 import hashlib
 import io

@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Shared test helpers. Everything here is invented data, no client data."""
 import glob
 import os

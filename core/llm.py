@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Talks to Ollama, the local language model program, on this computer only.
 
 The model and the address are set here and nowhere else.

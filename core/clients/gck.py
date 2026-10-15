@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Client profile: GCK. NOT SET UP YET.
 
 GCK's sample PDF and loading-order Excel were not available on 2026-10-15, so nothing about GCK has

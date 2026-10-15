@@ -1,5 +1,7 @@
 # DocuLoop: manager guide
 
+**© 2026 Tradesmart Supplies Limited. All rights reserved.** Developed by Maurille Khonde. See the LICENSE file.
+
 DocuLoop makes the truck documents for you. You give it one finished PDF (the sample) and the
 client's loading-order Excel. It gives back one 3-page PDF per truck: road manifest, commercial
 invoice and packing list, looking exactly like the sample.

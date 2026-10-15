@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Small helpers for DocuLoop's look. UI only: nothing here changes a figure or a document.
 
 All colours come from the [theme] block of .streamlit/config.toml (the one place to change them).
@@ -113,5 +114,6 @@ def status_of(text):
 
 
 def footer():
-    st.markdown(f'<div class="dl-footer">Built with Llama · DocuLoop v{VERSION} · '
+    st.markdown(f'<div class="dl-footer">© 2026 Tradesmart Supplies Limited. All rights reserved.<br>'
+                f'Developed by Maurille Khonde · DocuLoop v{VERSION} · Built with Llama · '
                 'works on this computer only</div>', unsafe_allow_html=True)

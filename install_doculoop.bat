@@ -1,4 +1,5 @@
 @echo off
+rem Copyright (c) 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 rem Installs DocuLoop on this computer. Run it once, with internet. Needs Python 3.12.
 cd /d "%~dp0"
 

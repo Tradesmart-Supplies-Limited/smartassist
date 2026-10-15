@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """The clients DocuLoop serves, and recognising which client a file belongs to.
 
 Recognition uses file CONTENT only (text in the PDF, titles in the Excel), never file names.

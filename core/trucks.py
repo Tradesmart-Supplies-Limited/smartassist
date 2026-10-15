@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Turn the cleaned Excel table into a list of trucks, and check them."""
 import re
 from dataclasses import dataclass, field

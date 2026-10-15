@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Rebuilding the sample's own truck must give back the sample's text on pages 1-3.
 
 Needs the real sample in samples\\ (not in git), so it is skipped when the sample is absent.

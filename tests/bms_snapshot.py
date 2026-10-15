@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Builds BMS PDFs for 4 invented trucks and lists every word with its position.
 
 Used by test_bms_regression.py to prove that BMS output never changes. The reference file

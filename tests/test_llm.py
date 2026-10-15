@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """The Ollama client must fail politely when Ollama is not there (no model is used here)."""
 import pytest
 

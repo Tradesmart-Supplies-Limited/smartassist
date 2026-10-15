@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Instruction handling with NO language model: the model's answer is faked (invented data only)."""
 import csv
 import json

@@ -1,3 +1,4 @@
+# Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Figures, date format and PDF building (invented data only)."""
 import time
 from datetime import date
