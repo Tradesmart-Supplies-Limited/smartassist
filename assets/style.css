@@ -35,11 +35,12 @@
 }
 .dl-logos { height: 78px; width: auto; }
 
-/* A small status line under the band that moves from left to right, like TV news. */
+/* A small status line under the band, pulled from right to left by a tiny truck, like TV news. */
 .dl-ticker { position: relative; overflow: hidden; height: 1.3rem; margin-top: 4px;
              font-size: 0.75rem; color: var(--dl-gray); }
 .dl-ticker span { position: absolute; white-space: nowrap; top: 0; animation: dl-ticker 22s linear infinite; }
-@keyframes dl-ticker { from { left: -45%; } to { left: 100%; } }
+@keyframes dl-ticker { from { left: 100%; } to { left: -45%; } }
+.dl-ticker-truck { vertical-align: -2px; margin-right: 4px; }
 /* Still, for anyone who asked Windows for less motion. */
 @media (prefers-reduced-motion: reduce) { .dl-ticker span { animation: none; left: 0; } }
 

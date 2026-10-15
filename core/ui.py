@@ -49,6 +49,14 @@ LOGO = """<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
 <path d="M7 19h12M7 22h8" stroke="currentColor" stroke-width="2"/></svg>"""
 
 
+# A tiny truck facing left (cab in front) that pulls the status line along, drawn in code.
+TICKER_TRUCK = """<svg class="dl-ticker-truck" width="30" height="13" viewBox="0 0 30 13" aria-hidden="true">
+<path d="M1 10V6l2.5-4H9v8z" fill="var(--dl-accent)"/><rect x="3.5" y="3" width="3.5" height="2.5" fill="#FFFFFF"/>
+<rect x="10" y="1" width="19" height="9" rx="1" fill="var(--dl-accent)"/><rect x="9" y="8" width="2" height="1.5" fill="var(--dl-gray)"/>
+<circle cx="5" cy="11" r="1.8" fill="var(--dl-text)"/><circle cx="20" cy="11" r="1.8" fill="var(--dl-text)"/>
+<circle cx="25" cy="11" r="1.8" fill="var(--dl-text)"/></svg>"""
+
+
 def _logos():
     """The Tradesmart Supplies and OGEFREM logos (assets/logos.png), embedded in the page itself."""
     path = os.path.join(PROJECT, "assets", "logos.png")
@@ -76,7 +84,7 @@ def header(assistant_ok, model):
         f'<div class="dl-header" style="color:{COLORS["accent"]}">{LOGO}<div>'
         '<h1>DocuLoop</h1><p>Road manifest, commercial invoice and packing list from your Excel sheet</p>'
         f'</div></div><div class="dl-logo-tile">{_logos()}</div></div>'
-        f'<div class="dl-ticker" role="status"><span>{status}</span></div>',
+        f'<div class="dl-ticker" role="status"><span>{TICKER_TRUCK} {status}</span></div>',
         unsafe_allow_html=True)
 
 
