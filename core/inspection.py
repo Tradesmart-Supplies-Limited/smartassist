@@ -91,11 +91,12 @@ def safe_name(invoice_no):
     return re.sub(r"[^A-Za-z0-9._-]", "_", invoice_no)
 
 
-def build_zip(results, reports, mode):
+def build_zip(results, reports, mode, prefix=""):
     """One folder per truck, named by invoice number, with the files for the chosen mode.
 
     results: the app's generated results ({"files": [(name, bytes)], "jobs": [(name, values)]}).
     reports: {invoice_no: report bytes}. A truck without a report gets its documents only.
+    prefix: put before combined file names, e.g. "BMS_" (the client).
     """
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -104,7 +105,7 @@ def build_zip(results, reports, mode):
             folder = safe_name(invoice_no)
             report = reports.get(invoice_no)
             if mode == MODE_COMBINED and report:
-                archive.writestr(f"{folder}/{folder}_with_inspection.pdf", combine(documents, report))
+                archive.writestr(f"{folder}/{prefix}{folder}_with_inspection.pdf", combine(documents, report))
                 continue
             archive.writestr(f"{folder}/{file_name}", documents)
     return buffer.getvalue()

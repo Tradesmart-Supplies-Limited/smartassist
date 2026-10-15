@@ -4,6 +4,7 @@ gatherUsageStats = false
 
 [client]
 toolbarMode = "minimal"
+showErrorDetails = "none"      # never show technical error details to the manager
 
 # ---- ALL DocuLoop colours live here (core/ui.py reads this block for its own CSS too) ----
 # Change primaryColor to change the accent everywhere. Every text colour below keeps a

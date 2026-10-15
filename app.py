@@ -1,9 +1,11 @@
-"""DocuLoop: one 3-page PDF per truck, made from the sample PDF and the loading-order Excel."""
+"""DocuLoop: one 3-page PDF per truck, made from a client's sample PDF and loading-order Excel."""
+import hashlib
 import io
 import os
 import re
+import traceback
 import zipfile
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 import pandas as pd
@@ -11,17 +13,43 @@ import streamlit as st
 
 from core import inspection as insp
 from core import instructions as ins
-from core import layout, llm, ui
+from core import llm, ui
+from core.clients import detect_client_from_excel, detect_client_from_pdf, get_client, list_clients, pairing_problem
 from core.excel_reader import clean_sheet, detect_header_row, read_raw_sheets
 from core.pdf_builder import (LayoutError, agent_for_border, build_pdf, document_values, format_date,
                               load_template, pymupdf, two_decimals)
-from core.trucks import FIELDS, OPTIONAL, cell_text, check_trucks, guess_columns, read_trucks, simplify
+from core.trucks import cell_text, check_trucks, guess_columns, read_trucks, simplify
 
 NO_COLUMN = "(none)"
-LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "instructions_log.csv")
+HERE = os.path.dirname(os.path.abspath(__file__))
+LOG_PATH = os.path.join(HERE, "output", "instructions_log.csv")
+ERROR_LOG = os.path.join(HERE, "output", "error_log.txt")
 
 st.set_page_config(page_title="DocuLoop", page_icon=":material/local_shipping:", layout="wide")
 ui.apply_style()
+
+
+def log_error(where):
+    """Write the technical details of an unexpected problem to output/error_log.txt (never on screen)."""
+    try:
+        os.makedirs(os.path.dirname(ERROR_LOG), exist_ok=True)
+        with open(ERROR_LOG, "a", encoding="utf-8") as f:
+            f.write(f"--- {datetime.now().isoformat(timespec='seconds')} {where}\n{traceback.format_exc()}\n")
+    except OSError:
+        pass
+
+
+def file_kind(data):
+    """What a file really is, from its first bytes (never from its name)."""
+    if not data:
+        return "empty"
+    if data[:4] == b"%PDF":
+        return "pdf"
+    if data[:2] == b"PK":
+        return "excel"                    # .xlsx / .xlsm are zip files
+    if data[:8] == b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1":
+        return "old excel"                # .xls (the older Excel format)
+    return "other"
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -33,91 +61,207 @@ def reader_status():
 reader_ok, reader_message = reader_status()
 ui.header(reader_ok, llm.MODEL)
 
+# ---------------- Client choice (remembered in this browser session only) ----------------
+CLIENT_IDS = [c.ID for c in list_clients()]
+st.session_state.setdefault("active_client", CLIENT_IDS[0])
+st.session_state.setdefault("client", st.session_state.active_client)
+SETTING_KEYS = [ins.KEY_DATE, ins.KEY_SOURCE, ins.KEY_TONNAGE, ins.KEY_PACKAGES, *ins.KEY_LABELS.values(),
+                *ins.KEY_PRICES.values()]
+
+
+def switch_client(new_id):
+    """Use another client: everything loaded for the previous one is cleared."""
+    st.session_state.active_client = new_id
+    st.session_state.client = new_id
+    for key in ["template", "template_error", "pdf_id", "results", "xl_id", "pending", "reports",
+                "client_switch_pending", ins.KEY_EXCLUDED, ins.KEY_ONLY, ins.KEY_ACTIVE, *SETTING_KEYS]:
+        st.session_state.pop(key, None)
+    st.session_state.upload_round = st.session_state.get("upload_round", 0) + 1   # empties the upload boxes
+
+
+def on_client_change():
+    """Client choice changed: ask first if PDFs were already made, otherwise switch now."""
+    new_id = st.session_state.client
+    if new_id == st.session_state.active_client:
+        return
+    if st.session_state.get("results"):
+        st.session_state.client_switch_pending = new_id
+        st.session_state.client = st.session_state.active_client      # stay until confirmed
+    else:
+        switch_client(new_id)
+
+
+with st.container(border=True):
+    st.radio("Client", CLIENT_IDS, key="client", horizontal=True, on_change=on_client_change,
+             format_func=lambda client_id: get_client(client_id).NAME)
+    pending_switch = st.session_state.get("client_switch_pending")
+    if pending_switch:
+        st.warning(f"Switching to {get_client(pending_switch).NAME} clears the sample, the Excel and the PDFs "
+                   f"already made for {get_client(st.session_state.active_client).NAME}.", icon=":material/warning:")
+        b1, b2, _ = st.columns([1, 1, 3])
+        b1.button(f"Switch to {get_client(pending_switch).NAME}", key="confirm_client_switch", type="primary",
+                  on_click=switch_client, args=(pending_switch,))
+        b2.button(f"Stay on {get_client(st.session_state.active_client).NAME}", key="cancel_client_switch",
+                  on_click=lambda: st.session_state.pop("client_switch_pending", None))
+
+client = get_client(st.session_state.active_client)
+upload_round = st.session_state.get("upload_round", 0)
+round_suffix = "" if upload_round == 0 else f"_{upload_round}"
+if not client.READY:
+    st.info(f"{client.NAME} is not set up yet: DocuLoop is waiting for a {client.NAME} sample PDF and "
+            f"loading-order Excel to learn its layout. Choose another client to work now.",
+            icon=":material/construction:")
+    st.stop()
+
+
+def blocked_by_pairing(detected_id, what, override_key):
+    """Show a mismatch warning with a switch button. True while the manager has not resolved it."""
+    problem = pairing_problem(client.ID, detected_id, what)
+    if not problem:
+        return False
+    st.warning(problem, icon=":material/swap_horiz:")
+    c1, c2 = st.columns([1, 2])
+    c1.button(f"Switch to {get_client(detected_id).NAME}", key=f"switch_from_{override_key}",
+              on_click=switch_client, args=(detected_id,))
+    confirmed = c2.checkbox(f"I confirm: use this {what} for {client.NAME} anyway", key=override_key)
+    return not confirmed
+
+
 # ---------------- Step 1: sample PDF ----------------
 with st.container(border=True):
     step1 = st.empty()
-    ui.step_header(step1, 1, "Sample PDF")
-    pdf_file = st.file_uploader("Upload the sample PDF (the finished look)", type=["pdf"], key="pdf")
+    ui.step_header(step1, 1, f"{client.NAME} sample PDF")
+    pdf_file = st.file_uploader(f"Upload the {client.NAME} sample PDF (the finished look)",
+                                type=["pdf", "xlsx", "xlsm", "xls"], key="pdf" + round_suffix)
     if not pdf_file:
-        st.info("Waiting for the sample PDF: drop the finished example (e.g. YS-BMS10-288.pdf) in the box above.",
-                icon=":material/upload_file:")
+        st.info(f"Waiting for the {client.NAME} sample PDF: drop any finished {client.NAME} truck PDF in the box "
+                "above. Its file name does not matter.", icon=":material/upload_file:")
         st.stop()
 
-    # Check the sample only once per uploaded file, and remember the result.
-    pdf_id = (pdf_file.name, pdf_file.size)
+    pdf_bytes = pdf_file.getvalue()
+    kind = file_kind(pdf_bytes)
+    if kind == "empty":
+        st.error("This file is empty. Upload the sample PDF again.", icon=":material/error:")
+        st.stop()
+    if kind in ("excel", "old excel"):
+        st.error("This is an Excel sheet, not the sample PDF. Put it in Step 2 (the Excel box), and put a "
+                 f"finished {client.NAME} truck PDF here.", icon=":material/error:")
+        st.stop()
+    if kind != "pdf":
+        st.error(f"This file is not a PDF. Upload a finished {client.NAME} truck PDF here.", icon=":material/error:")
+        st.stop()
+    if blocked_by_pairing(detect_client_from_pdf(pdf_bytes)[0], "sample PDF", "override_pdf" + round_suffix):
+        st.stop()
+
+    # Check the sample only once per file content, and remember the result.
+    pdf_id = (client.ID, hashlib.sha256(pdf_bytes).hexdigest())
     if st.session_state.get("pdf_id") != pdf_id:
         st.session_state.pdf_id = pdf_id
         st.session_state.pop("results", None)
         try:
-            st.session_state.template = load_template(pdf_file.getvalue())
+            st.session_state.template = load_template(pdf_bytes, client)
             st.session_state.template_error = None
         except LayoutError as error:
             st.session_state.template = None
             st.session_state.template_error = str(error)
+        except Exception:
+            log_error("reading the sample PDF")
+            st.session_state.template = None
+            st.session_state.template_error = (f"This file could not be read. Check that it is a {client.NAME} "
+                                               "sample PDF.")
 
     if st.session_state.template_error:
         st.error(st.session_state.template_error, icon=":material/error:")
         st.stop()
     template = st.session_state.template
     sample = template["sample"]
-    ui.step_header(step1, 1, "Sample PDF", done=True,
+    ui.step_header(step1, 1, f"{client.NAME} sample PDF", done=True,
                    summary=f"Sample recognised: {pdf_file.name} · all {len(template['spots'])} fields found on "
                            f"pages 1-3 (sample invoice {sample['invoice_no']}). Any later pages are ignored.")
 
 # ---------------- Step 2: Excel ----------------
 with st.container(border=True):
     step2 = st.empty()
-    ui.step_header(step2, 2, "Loading-order Excel")
-    xl_file = st.file_uploader("Upload the client's Excel sheet", type=["xlsx", "xlsm"], key="xl")
+    ui.step_header(step2, 2, f"{client.NAME} loading-order Excel")
+    xl_file = st.file_uploader(f"Upload the {client.NAME} Excel sheet", type=["xlsx", "xlsm", "xls", "pdf"],
+                               key="xl" + round_suffix)
     if not xl_file:
-        st.info("Waiting for the loading-order Excel: drop the client's sheet in the box above.",
-                icon=":material/upload_file:")
+        st.info(f"Waiting for the {client.NAME} loading-order Excel: drop the sheet in the box above. "
+                "Its file name does not matter.", icon=":material/upload_file:")
+        st.stop()
+
+    xl_bytes = xl_file.getvalue()
+    kind = file_kind(xl_bytes)
+    if kind == "empty":
+        st.error("This file is empty. Upload the Excel sheet again.", icon=":material/error:")
+        st.stop()
+    if kind == "pdf":
+        st.error("This is a PDF, not the Excel sheet. Put the sample PDF in Step 1, and the "
+                 f"{client.NAME} loading-order Excel here.", icon=":material/error:")
+        st.stop()
+    if kind == "old excel":
+        st.error("This Excel file is in the old .xls format. Open it in Excel, choose Save As, "
+                 "'Excel Workbook (.xlsx)', and upload that file.", icon=":material/error:")
+        st.stop()
+    if kind != "excel":
+        st.error(f"This file is not an Excel sheet. Upload the {client.NAME} loading-order Excel here.",
+                 icon=":material/error:")
+        st.stop()
+    try:
+        raw_sheets = read_raw_sheets(io.BytesIO(xl_bytes), "sheet.xlsx")      # the real name is never used
+    except Exception:
+        log_error("reading the Excel")
+        st.error(f"This file could not be read. Check that it is the {client.NAME} Excel sheet.",
+                 icon=":material/error:")
         st.stop()
 
     try:
-        raw_sheets = read_raw_sheets(io.BytesIO(xl_file.getvalue()), xl_file.name)
-    except Exception as error:
-        st.error(f"This Excel file cannot be read ({error}).", icon=":material/error:")
+        sheet_name = st.selectbox("Sheet", list(raw_sheets))
+        raw = raw_sheets[sheet_name]
+        if len(raw) < 2:
+            st.warning("This sheet is empty. Choose another sheet or another file.", icon=":material/warning:")
+            st.stop()
+        if blocked_by_pairing(detect_client_from_excel(raw)[0], "Excel sheet", "override_xl" + round_suffix):
+            st.stop()
+
+        # The row with the column titles is found automatically. The manual choice is inside the
+        # closed "Column matching" box, which opens by itself when a column cannot be found.
+        detected_columns = list(clean_sheet(raw, detect_header_row(raw)).columns)
+        detected_missing = any(v is None for k, v in guess_columns(detected_columns, client).items()
+                               if k not in client.OPTIONAL)
+        matching = st.expander("Column matching (open to correct it)", expanded=detected_missing,
+                               icon=":material/view_column:")
+        header_row = matching.number_input(
+            "Row that contains the column titles (the first row is 1)",
+            min_value=1, max_value=len(raw), value=detect_header_row(raw) + 1,
+            key=f"header_{xl_file.name}_{sheet_name}",
+        ) - 1
+        table = clean_sheet(raw, int(header_row))
+        columns = list(table.columns)
+        matching.caption(f"{len(table)} rows found under the titles: {', '.join(columns)}")
+
+        guess = guess_columns(columns, client)
+        mapping = {}
+        with matching:
+            cols = st.columns(3)
+            for n, (key, (label, _names)) in enumerate(client.FIELDS.items()):
+                options = [NO_COLUMN] + columns
+                start = options.index(guess[key]) if guess[key] in options else 0
+                choice = cols[n % 3].selectbox(label, options, index=start,
+                                               key=f"col_{key}_{sheet_name}_{header_row}")
+                mapping[key] = None if choice == NO_COLUMN else choice
+    except Exception:
+        log_error("reading the Excel sheet")
+        st.error(f"This file could not be read. Check that it is the {client.NAME} Excel sheet.",
+                 icon=":material/error:")
         st.stop()
 
-    sheet_name = st.selectbox("Sheet", list(raw_sheets))
-    raw = raw_sheets[sheet_name]
-    if len(raw) < 2:
-        st.warning("This sheet is empty.", icon=":material/warning:")
-        st.stop()
-
-    # The row with the column titles is found automatically. The manual choice is inside the
-    # closed "Column matching" box, which opens by itself when a column cannot be found.
-    detected_columns = list(clean_sheet(raw, detect_header_row(raw)).columns)
-    detected_missing = any(v is None for k, v in guess_columns(detected_columns).items() if k not in OPTIONAL)
-    matching = st.expander("Column matching (open to correct it)", expanded=detected_missing,
-                           icon=":material/view_column:")
-    header_row = matching.number_input(
-        "Row that contains the column titles (the first row is 1)",
-        min_value=1, max_value=len(raw), value=detect_header_row(raw) + 1,
-        key=f"header_{xl_file.name}_{sheet_name}",
-    ) - 1
-    table = clean_sheet(raw, int(header_row))
-    columns = list(table.columns)
-    matching.caption(f"{len(table)} rows found under the titles: {', '.join(columns)}")
-
-    guess = guess_columns(columns)
-    mapping = {}
-    missing = [FIELDS[k][0] for k in FIELDS if guess[k] is None and k not in OPTIONAL]
-    with matching:
-        cols = st.columns(3)
-        for n, (key, (label, _names)) in enumerate(FIELDS.items()):
-            options = [NO_COLUMN] + columns
-            start = options.index(guess[key]) if guess[key] in options else 0
-            choice = cols[n % 3].selectbox(label, options, index=start,
-                                           key=f"col_{key}_{sheet_name}_{header_row}")
-            mapping[key] = None if choice == NO_COLUMN else choice
-
-    missing = [FIELDS[k][0] for k in FIELDS if mapping[k] is None and k not in OPTIONAL]
+    missing = [client.FIELDS[k][0] for k in client.FIELDS if mapping[k] is None and k not in client.OPTIONAL]
     if missing:
-        st.error("Choose a column for: " + ", ".join(missing), icon=":material/error:")
+        st.error("These columns were not found: " + ", ".join(missing) + f". Check that this is the {client.NAME} "
+                 "Excel, or choose the columns in 'Column matching'.", icon=":material/error:")
         st.stop()
-    ui.step_header(step2, 2, "Loading-order Excel", done=True,
+    ui.step_header(step2, 2, f"{client.NAME} loading-order Excel", done=True,
                    summary=f"{xl_file.name} · sheet '{sheet_name}' · titles on row {int(header_row) + 1} · "
                            f"{len(table)} rows read")
 
@@ -157,34 +301,34 @@ if st.session_state.get("xl_id") != xl_id:
 # Every Step 3 setting has a key, so an applied order can change it. These are the defaults.
 DEFAULTS = {
     ins.KEY_DATE: date.today(),
-    ins.KEY_LABELS["freight_1"]: layout.DEFAULT_FREIGHT1,
-    ins.KEY_LABELS["freight_2"]: layout.DEFAULT_FREIGHT2,
+    ins.KEY_LABELS["freight_1"]: client.DEFAULT_FREIGHT1,
+    ins.KEY_LABELS["freight_2"]: client.DEFAULT_FREIGHT2,
     ins.KEY_SOURCE: ins.SOURCE_CLIENT,
     ins.KEY_TONNAGE: 40.0,
     ins.KEY_PACKAGES: 40,
 }
 PRICE_NAMES = {"coal": "coal", "freight_1": "freight1", "freight_2": "freight2", "insurance": "insurance"}
 for item, name in PRICE_NAMES.items():
-    DEFAULTS[ins.KEY_PRICES[item]] = float(layout.DEFAULT_PRICES[name])
+    DEFAULTS[ins.KEY_PRICES[item]] = float(client.DEFAULT_PRICES[name])
 for key, value in DEFAULTS.items():
     st.session_state.setdefault(key, value)
 
 # Example orders shown as chips; clicking one fills the order box (it is not applied).
-EXAMPLES = ["Coal price is 75"]
+EXAMPLES = client.EXAMPLES          # example orders for this client
 
 
 def apply_pending():
     """Apply button: write the understood order into the settings, then log it."""
     pending = st.session_state.pop("pending")
     ins.apply_plan(pending["plan"], st.session_state)
-    ins.log_instruction(LOG_PATH, pending["text"], pending["plan"]["actions"], True)
+    ins.log_instruction(LOG_PATH, pending["text"], pending["plan"]["actions"], True, client.ID)
     st.session_state.instruction_text = ""
 
 
 def discard_pending():
     """Discard button: change nothing, only log it."""
     pending = st.session_state.pop("pending")
-    ins.log_instruction(LOG_PATH, pending["text"], pending["plan"]["actions"], False)
+    ins.log_instruction(LOG_PATH, pending["text"], pending["plan"]["actions"], False, client.ID)
 
 
 def clear_instructions():
@@ -226,7 +370,7 @@ with step3_card:
                 if typed:
                     with st.spinner("Reading the order... the first one can take up to a minute while the model loads."):
                         try:
-                            plan = ins.read_order(typed, truck_refs, date.today(), llm.chat)
+                            plan = ins.read_order(typed, truck_refs, date.today(), llm.chat, client)
                             st.session_state.pending = {"text": typed, "plan": plan}
                         except (llm.LLMError, ins.InvalidReply) as error:
                             st.warning(f"The order could not be read. {error} Use the settings below by hand.",
@@ -278,10 +422,11 @@ with step3_card:
                       [ins.SOURCE_CLIENT, ins.SOURCE_EXCEL, ins.SOURCE_FIXED], key=ins.KEY_SOURCE)
     tonnage_from_excel = source == ins.SOURCE_EXCEL
     packages_from_excel = source in (ins.SOURCE_EXCEL, ins.SOURCE_CLIENT)
-    fixed_tonnage = layout.CLIENT_TONNAGE if source == ins.SOURCE_CLIENT else None
+    fixed_tonnage = client.CLIENT_TONNAGE if source == ins.SOURCE_CLIENT else None
     fixed_packages = None
     if source == ins.SOURCE_CLIENT:
-        st.caption(f"Every truck is printed at {layout.CLIENT_TONNAGE} MT; the Excel's tonnage column is not used.")
+        st.caption(f"Every {client.NAME} truck is printed at {client.CLIENT_TONNAGE} MT; "
+                   "the Excel's tonnage column is not used.")
     if source == ins.SOURCE_FIXED:
         f1, f2, _ = st.columns(3)
         fixed_tonnage = Decimal(f"{f1.number_input('Tonnage (MT) for every truck', min_value=0.01, step=0.5, format='%.2f', key=ins.KEY_TONNAGE):.2f}")
@@ -305,11 +450,11 @@ with st.container(border=True):
 
     # The DRC clearance agent follows the exit border. For any other border the manager must
     # choose the agent here; until then those trucks wait and get no PDF.
-    AGENT_CHOICES = {f"{a['name']} ({a['mobile']}), as for {border.title()}": a for border, a in layout.AGENTS.items()}
+    AGENT_CHOICES = {f"{a['name']} ({a['mobile']}), as for {border.title()}": a for border, a in client.AGENTS.items()}
     CHOOSE = "(choose the agent)"
     confirmed_agents = {}
     unknown_borders = sorted({t.border for t in trucks
-                              if not t.errors and not left_out(t) and agent_for_border(t.border) is None})
+                              if not t.errors and not left_out(t) and agent_for_border(t.border, client) is None})
     if unknown_borders:
         with st.container(border=True):
             st.warning("Please confirm the DRC clearance agent: these exit borders have no agent on file. "
@@ -327,7 +472,7 @@ with st.container(border=True):
         tonnage = truck.tonnage if tonnage_from_excel else fixed_tonnage
         packages = truck.packages if packages_from_excel else fixed_packages
         total = ""
-        agent = agent_for_border(truck.border) or confirmed_agents.get(truck.border)
+        agent = agent_for_border(truck.border, client) or confirmed_agents.get(truck.border)
         if left_out(truck):
             status = "Excluded by instruction"
         elif truck.errors:
@@ -335,8 +480,9 @@ with st.container(border=True):
         elif agent is None:
             status = "WAITING: confirm the clearance agent above"
         else:
-            values = document_values(truck, tonnage, packages, date_text, prices, freight1, freight2, agent)
-            file_name = re.sub(r"[^A-Za-z0-9._-]", "_", truck.invoice_no) + ".pdf"
+            values = document_values(truck, tonnage, packages, date_text, prices, freight1, freight2, agent,
+                                     client=client)
+            file_name = f"{client.NAME}_" + re.sub(r"[^A-Za-z0-9._-]", "_", truck.invoice_no) + ".pdf"
             jobs.append((file_name, values))
             total = values["total"]
             status = "Warning: " + "; ".join(truck.warnings) if truck.warnings else "OK"
@@ -423,7 +569,7 @@ with st.container(border=True):
         bar.empty()
         # Keep the results, so they stay on screen after a download click.
         st.session_state.results = {"files": files, "zip": zip_buffer.getvalue(),
-                                    "jobs": jobs, "date": date_text}
+                                    "jobs": jobs, "date": date_text, "client": client.ID}
 
     results = st.session_state.get("results")
     if not results:
@@ -431,14 +577,14 @@ with st.container(border=True):
     else:
         files = results["files"]
         ui.step_header(step4, 4, "Generate", done=True,
-                       summary=f"{len(files)} PDFs made for {results['date']}")
+                       summary=f"{client.NAME}: {len(files)} PDFs made for {results['date']}")
         if results["jobs"] != jobs:
             st.warning("The data or settings changed after these PDFs were made. "
                        "Click 'Generate PDFs' again to update them.", icon=":material/warning:")
-        st.success(f"{len(files)} PDFs ready, 3 pages each · {skipped} skipped · {excluded} excluded · "
+        st.success(f"{client.NAME}: {len(files)} PDFs ready, 3 pages each · {skipped} skipped · {excluded} excluded · "
                    f"{waiting} waiting", icon=":material/task_alt:")
         st.download_button("Download everything (ZIP)", results["zip"],
-                           file_name=f"DocuLoop_{results['date']}.zip", mime="application/zip",
+                           file_name=f"DocuLoop_{client.NAME}_{results['date']}.zip", mime="application/zip",
                            key="download_zip", type="primary", icon=":material/download:")
 
         with st.expander("Download one truck at a time", icon=":material/description:"):
@@ -458,13 +604,16 @@ with st.container(border=True):
             names = [file_name for file_name, _data in files]
             chosen = st.selectbox("Truck to preview", names, key="preview_choice")
             preview = pymupdf.open(stream=dict(files)[chosen], filetype="pdf")
-            for page, tab in zip(preview, st.tabs(["Manifest", "Invoice", "Packing list"])):
+            for page, tab in zip(preview, st.tabs(client.PAGE_NAMES)):
                 tab.image(page.get_pixmap(dpi=110).tobytes("png"))
 
 # ---------------- Inspection report (optional, uploaded once) ----------------
 # One inspection report is used for every truck. It is kept on this computer, so the manager
 # uploads it once and only again when the client sends a new one. It is never changed.
-REPORT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "inspection_report.pdf")
+REPORT_PATH = os.path.join(HERE, "output", f"inspection_report_{client.NAME}.pdf")
+OLD_REPORT_PATH = os.path.join(HERE, "output", "inspection_report.pdf")      # saved before there were 2 clients
+if client.ID == "bms" and not os.path.exists(REPORT_PATH) and os.path.exists(OLD_REPORT_PATH):
+    REPORT_PATH = OLD_REPORT_PATH       # keep using the BMS report saved earlier
 
 
 def save_report():
@@ -525,9 +674,9 @@ with st.container(border=True):
         return insp.combine(documents, report)
 
     @st.cache_data(show_spinner=False, max_entries=6)
-    def zip_for(files, jobs, reports, mode):
+    def zip_for(files, jobs, reports, mode, prefix):
         """The batch ZIP, made once per choice and remembered between clicks."""
-        return insp.build_zip({"files": files, "jobs": jobs}, reports, mode)
+        return insp.build_zip({"files": files, "jobs": jobs}, reports, mode, prefix)
 
     if not report:
         pass                              # no report: the app works exactly as before
@@ -538,9 +687,10 @@ with st.container(border=True):
         include = st.radio("What to include", insp.MODES, key="inspection_mode")
         with st.spinner("Preparing the ZIP..."):
             batch = zip_for(results["files"], results["jobs"],
-                            {values["invoice_no"]: report for _name, values in results["jobs"]}, include)
+                            {values["invoice_no"]: report for _name, values in results["jobs"]}, include,
+                            f"{client.NAME}_")
         st.download_button(f"Download ZIP: {include}", batch,
-                           file_name=f"DocuLoop_{results['date']}_with_inspection.zip",
+                           file_name=f"DocuLoop_{client.NAME}_{results['date']}_with_inspection.zip",
                            mime="application/zip", key="download_inspection_zip", type="primary",
                            icon=":material/download:")
         with st.expander("Download per truck (documents or combined)", icon=":material/description:"):
@@ -551,7 +701,7 @@ with st.container(border=True):
                 c2.download_button("Documents", documents, file_name=file_name, mime="application/pdf",
                                    key=f"insp_documents_{n}")
                 c3.download_button("Combined", combined_pdf(documents, report),
-                                   file_name=f"{insp.safe_name(invoice_no)}_with_inspection.pdf",
+                                   file_name=f"{client.NAME}_{insp.safe_name(invoice_no)}_with_inspection.pdf",
                                    mime="application/pdf", key=f"insp_combined_{n}")
 
 ui.footer()

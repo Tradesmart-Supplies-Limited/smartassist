@@ -1,6 +1,6 @@
 # DocuLoop
 
-Local, offline Streamlit app for ONE client. The manager uploads a sample PDF (the finished look)
+Local, offline Streamlit app for this company's clients (BMS; GCK prepared, see "Clients"). The manager uploads a sample PDF (the finished look)
 and the client's loading-order Excel. For every truck the app writes one 3-page PDF
 (road manifest, commercial invoice, packing list) that looks identical to the sample.
 One wrong number can delay an OGEFREM customs declaration, so correctness comes first.
@@ -29,11 +29,11 @@ The sample PDF IS the template. Never redraw lines or logos. With PyMuPDF:
 5. Embed `C:\Windows\Fonts\arial.ttf` / `arialbd.ttf` (fallback helv/hebo), then `subset_fonts()` in try/except.
    Each truck PDF should be well under 300 KB.
 
-The fields live in one table module (`core\layout.py`). Since 2026-10-14 (owner's request) ANY truck's PDF
+The fields live in the client's profile (`core\clients\bms.py`, moved from `core\layout.py`). Since 2026-10-14 (owner's request) ANY truck's PDF
 of this format is accepted as the sample, not only YS-BMS10-288. At load time:
 - each spot is found by the middle of its text (x = centre, or the right edge for "right"; y = middle
   height), so names of any length match;
-- every value must fit its `layout.FORMATS` pattern (invoice no., date, "40.00 MT", "$2,800.00", ...);
+- every value must fit its `bms.FORMATS` pattern (invoice no., date, "40.00 MT", "$2,800.00", ...);
   names, plates, border and wording only have to be present;
 - a value repeated in several spots must be the same everywhere, and the 3 page titles must be there;
 - otherwise show a clear "does not match" error listing what is wrong.
@@ -45,7 +45,7 @@ Things learned while building:
 - The sample's own font is Inter; replaced values are written in Arial as planned.
 - Arial maps "-" and the soft hyphen (and space / no-break space) to one glyph, so text read back wrong.
   `pdf_builder.py` uses an in-memory Arial copy with U+00AD and U+00A0 removed (fonttools).
-- Private values (driver, passport, horse, trailers) are NOT written in `layout.py`. For those the load
+- Private values (driver, passport, horse, trailers) are NOT written in `bms.py`. For those the load
   check only requires the sample to show the same value at every spot of that field.
 - The Excel also has a "Trailer2 Reg" column; "N/A" or empty becomes "NIL".
 - Unreadable "No. of packages" is an error too (the truck is skipped).
@@ -55,7 +55,7 @@ Things learned while building:
 - Page 1: manifest no. and file ref (both = invoice no.), loaded date, package count, quantity "40.00 MT",
   exit border, horse, trailer 1, trailer 2 ("NIL" if none), driver, passport.
   Also the DRC clearance agent's "Contact person :" and "Mobile :" lines, chosen by exit border
-  (`layout.AGENTS`: MOKAMBO = Pacafic +243 995 527 463, SAKANIA = Oscar Levite +243 997 595 381;
+  (`bms.AGENTS`: MOKAMBO = Pacafic +243 995 527 463, SAKANIA = Oscar Levite +243 997 595 381;
   "MALABAR RDC" stays). Any other border: the app asks the manager to choose the agent; until then
   those trucks wait and get no PDF. `document_values` refuses an unknown border without an agent.
 - Page 2: invoice date, invoice no.; top row horse, trailer 1, driver; truck-detail row driver, horse,
@@ -71,7 +71,7 @@ Things learned while building:
   and can still be changed by a typed instruction.
 - Amount = quantity x price with `Decimal`, `ROUND_HALF_UP`. Total = sum of the four amounts.
 - Quantities (changed on the owner's request, 2026-10-14): the default is this client's rule,
-  `layout.CLIENT_TONNAGE` = 40 MT for every truck with packages from the Excel; an unreadable Excel
+  `bms.CLIENT_TONNAGE` = 40 MT for every truck with packages from the Excel; an unreadable Excel
   tonnage is then not an error. A switch offers "From the Excel" (tonnage parsed from "42T") and
   fixed figures for every truck. A notice shows where the sample's figures differ from the Excel's
   figures that are actually used, for the same invoice no.
@@ -79,6 +79,30 @@ Things learned while building:
 - NEVER use an AI model to produce a document value. Everything is copied or calculated. No network calls.
 - Validation: empty invoice no./driver/horse, unreadable tonnage, duplicate invoice no. = error (truck
   skipped); duplicate horse, empty passport/border = warning.
+
+## Clients (since 2026-10-15, branch multi-client)
+- `core\clients\bms.py` is the BMS profile: id, name, READY, PDF and Excel fingerprints, Excel FIELDS /
+  OPTIONAL, PRICE_ITEMS / FREIGHT_LINES / EXAMPLES for the assistant, PAGE_NAMES, and the fields table,
+  formats, agents, client tonnage and default prices that used to be `core\layout.py`.
+- `core\clients\gck.py` is a PLACEHOLDER (READY = False): GCK's sample PDF and Excel were not available.
+  Never guess GCK values: fill this profile from real GCK files, then set READY and write the GCK test
+  in `tests\test_clients.py` (currently skipped).
+- `core\clients\__init__.py`: `get_client`, `list_clients`, `detect_client_from_pdf`,
+  `detect_client_from_excel` (content only, never file names), `pairing_problem`.
+- Core functions take the client: `load_template(bytes, client)`, `document_values(..., client=client)`,
+  `agent_for_border(border, client)`, `guess_columns(columns, client)`, `read_order(..., client)`.
+- App: client radio at the top (session_state only). Switching clears sample, Excel, results and
+  settings (asks first if PDFs exist). A file recognised as another client blocks building until the
+  manager switches or ticks the confirm box. GCK shows "not set up yet" and stops.
+- Names carry the client: `BMS_<invoice>.pdf`, `DocuLoop_BMS_<date>.zip`, combined
+  `BMS_<invoice>_with_inspection.pdf`; the instruction log has a "client" column; the inspection report is
+  kept per client as `output\inspection_report_BMS.pdf` (the older `output\inspection_report.pdf` is
+  still used for BMS if present).
+- Uploads: file type is read from the first bytes, never the name; an Excel in the PDF box (or a PDF in
+  the Excel box) gets a "use the other box" message; any other problem is a plain message and the
+  details go to `output\error_log.txt`. `.streamlit\config.toml` has `showErrorDetails = "none"`.
+- BMS regression: `tests\test_bms_regression.py` compares every word and position of 4 invented trucks
+  with `tests\bms_reference.json`, made with the code before the change.
 
 ## Typed instructions (Step 3, optional)
 - Files: `core\instructions.py` (schema, prompt, validation, truck/date lookup, limits, apply, log),
@@ -135,7 +159,7 @@ Things learned while building:
 
 ## Layout of the code
 - `core\excel_reader.py` header detection and reading; `core\trucks.py` column matching, parsing, validation.
-- `core\layout.py` fields table; `core\pdf_builder.py` builds the PDFs.
+- `core\clients\` one profile per client (fields table, Excel columns, defaults); `core\pdf_builder.py` builds the PDFs.
 - `app.py` 4 steps: sample upload + layout check, Excel upload + column matching, job details + data check,
   generate + downloads + preview.
 - `tests\` pytest with invented data only. The sample-regression test is skipped if the sample is absent.
@@ -145,8 +169,8 @@ Things learned while building:
 - `samples\` and `output\` are git-ignored. Real driver names, passports and phone numbers must never
   appear in committed files or tests.
   Exception (owner's decision, 2026-10-14): the two clearance agents' names and numbers in
-  `core\layout.py` (`SAMPLE_VALUES` and `AGENTS`).
-- Out of scope: multiple clients, other layouts, a local AI model, editable consignee/consignor.
+  `core\clients\bms.py` (`SAMPLE_VALUES` and `AGENTS`).
+- Out of scope: other layouts than the clients' own, editable consignee/consignor.
 - Only make changes that were asked for. Plain, readable code with short comments (the owner is a beginner).
 
 ## Stop and ask before

@@ -34,6 +34,16 @@ If step 3 says "running scripts is disabled", use this instead of steps 3-4:
 - The instruction box has an example button ("Coal price is 75") that fills the box for you.
 - After **Generate PDFs**: **Download everything (ZIP)**, then one truck at a time, then the preview.
 
+## Choosing the client
+At the top, choose the client: **BMS** or **GCK**. The steps then ask for that client's files
+(for example "Upload the BMS sample PDF"), and the PDFs are named with the client, e.g.
+`BMS_YS-BMS10-288.pdf`. Changing the client clears the loaded files (DocuLoop asks first if PDFs were
+already made). **GCK is not set up yet**: it shows a message until GCK's sample and Excel are added.
+
+File names do not matter: DocuLoop recognises a client's files by what is inside them. If a file looks
+like it belongs to the other client, DocuLoop warns you and offers to switch. If you drop an Excel in
+the PDF box (or the other way round), it tells you which box to use.
+
 ## The four steps
 1. **Sample PDF.** Upload any finished truck PDF in this client's format (for example
    `YS-BMS10-288.pdf` or `YS-BMS10-291.pdf`). A green tick confirms the layout was recognised. A red
@@ -72,7 +82,7 @@ The agent on the road manifest follows each truck's EXIT BORDER in the Excel:
 
 For any other border (or an empty one) DocuLoop asks you to choose the agent before it makes those
 trucks' PDFs; until you choose, they show "WAITING" in the data check. The "Clearance agent" column
-shows which agent each truck will get. To change an agent, edit `AGENTS` in `core\layout.py`.
+shows which agent each truck will get. To change an agent, edit `AGENTS` in `core\clients\bms.py`.
 
 ## Typed instructions (optional)
 In Step 3 you can type an order in plain English instead of changing the settings by hand.
