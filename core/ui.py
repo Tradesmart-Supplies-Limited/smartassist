@@ -58,13 +58,13 @@ TICKER_TRUCK = """<svg class="dl-ticker-truck" width="30" height="13" viewBox="0
 
 
 def _logos():
-    """The Tradesmart Supplies and OGEFREM logos (assets/logos.png), embedded in the page itself."""
+    """The Tradesmart Supplies logo (assets/logos.png), embedded in the page itself."""
     path = os.path.join(PROJECT, "assets", "logos.png")
     if not os.path.exists(path):
         return ""
     with open(path, "rb") as f:
         data = base64.b64encode(f.read()).decode("ascii")
-    return f'<img class="dl-logos" src="data:image/png;base64,{data}" alt="Tradesmart Supplies Limited and OGEFREM">'
+    return f'<img class="dl-logos" src="data:image/png;base64,{data}" alt="Tradesmart Supplies Limited">'
 
 
 def apply_style():
