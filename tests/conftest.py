@@ -8,7 +8,7 @@ import pytest
 PROJECT = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, PROJECT)     # lets the tests import the `core` package
 
-from core import layout                                   # noqa: E402
+from core.clients import bms as layout                   # noqa: E402  (the BMS client profile)
 from core.pdf_builder import load_template, pymupdf       # noqa: E402
 
 SAMPLE_PDFS = sorted(glob.glob(os.path.join(PROJECT, "samples", "*.pdf")))
@@ -49,8 +49,8 @@ def make_pretend_sample(changes=None):
 def template(request):
     """The template made from the pretend sample, and from the real one when it is present."""
     if request.param == "pretend":
-        return load_template(make_pretend_sample())
+        return load_template(make_pretend_sample(), layout)
     if not SAMPLE_PDFS:
         pytest.skip("sample PDF not present")
     with open(SAMPLE_PDFS[0], "rb") as f:
-        return load_template(f.read())
+        return load_template(f.read(), layout)

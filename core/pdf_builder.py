@@ -1,6 +1,6 @@
 """Build one 3-page PDF per truck, using the sample PDF itself as the template.
 
-Nothing is redrawn. For each spot in core/layout.py we remove the old text
+Nothing is redrawn. For each spot in the client's profile (core/clients/) we remove the old text
 and write the new text at the same place, size, weight and colour.
 """
 import io
@@ -15,7 +15,6 @@ except ImportError:          # older installs call the package "fitz"
 
 from fontTools.ttLib import TTFont
 
-from core import layout
 
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 CENT = Decimal("0.01")
@@ -75,18 +74,18 @@ def amount(tonnage, price):
     return (Decimal(tonnage) * Decimal(price)).quantize(CENT, rounding=ROUND_HALF_UP)
 
 
-def agent_for_border(border):
-    """The DRC clearance agent for an exit border, or None if the border is not known."""
-    return layout.AGENTS.get(" ".join(str(border).split()).upper())
+def agent_for_border(border, client):
+    """The client's DRC clearance agent for an exit border, or None if the border is not known."""
+    return client.AGENTS.get(" ".join(str(border).split()).upper())
 
 
-def document_values(truck, tonnage, packages, date_text, prices, freight1, freight2, agent=None):
+def document_values(truck, tonnage, packages, date_text, prices, freight1, freight2, agent=None, *, client):
     """Every text that goes into one truck's PDF, as {key: text}.
 
     agent: the clearance agent ({"name", "mobile"}). If not given, it follows the truck's exit border;
     a border without a known agent must be confirmed by the manager first (the app asks).
     """
-    agent = agent or agent_for_border(truck.border)
+    agent = agent or agent_for_border(truck.border, client)
     if agent is None:
         raise ValueError(f"No clearance agent is known for exit border '{truck.border}'.")
     amounts = {name: amount(tonnage, price) for name, price in prices.items()}
@@ -152,7 +151,7 @@ def _span_at(spans, x, y, align):
     return found[0] if len(found) == 1 else None
 
 
-def load_template(pdf_bytes):
+def load_template(pdf_bytes, client):
     """Check the sample and prepare it for filling. Raises LayoutError if it does not match.
 
     Returns a dict with:
@@ -164,6 +163,9 @@ def load_template(pdf_bytes):
         source = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     except Exception as error:
         raise LayoutError(f"This file cannot be opened as a PDF ({error}).")
+    layout = client                      # the client's fields table and formats
+    if not client.READY:
+        raise LayoutError(f"{client.NAME} is not set up yet, so its sample cannot be read.")
     if len(source) < layout.PAGES:
         raise LayoutError(f"The sample must have at least {layout.PAGES} pages, this PDF has {len(source)}.")
 
@@ -219,7 +221,7 @@ def load_template(pdf_bytes):
 
     for page in base:
         page.apply_redactions(images=0, graphics=0)   # 0 = leave pictures and lines alone
-    return {"base": base.tobytes(garbage=4, deflate=True), "spots": spots, "sample": sample}
+    return {"base": base.tobytes(garbage=4, deflate=True), "spots": spots, "sample": sample, "client": client.ID}
 
 
 # ---------- writing one truck ----------

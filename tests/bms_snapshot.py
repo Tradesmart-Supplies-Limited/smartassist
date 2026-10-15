@@ -7,6 +7,7 @@ import hashlib
 import json
 from decimal import Decimal
 
+from core.clients import bms
 from core.pdf_builder import build_pdf, document_values, pymupdf
 from core.trucks import Truck
 
@@ -37,7 +38,7 @@ def words_of(pdf_bytes):
 def snapshot(template, make_values=None):
     """The words of the 4 invented trucks' PDFs. make_values(truck, tonnage, packages, date, f1, f2)."""
     make_values = make_values or (lambda t, ton, pk, d, f1, f2: document_values(
-        t, Decimal(ton), Decimal(pk), d, PRICES, f1, f2))
+        t, Decimal(ton), Decimal(pk), d, PRICES, f1, f2, client=bms))
     return [words_of(build_pdf(template, make_values(*case))) for case in CASES]
 
 

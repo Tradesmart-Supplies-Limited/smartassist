@@ -6,7 +6,7 @@ from decimal import Decimal
 import openpyxl
 import pytest
 
-from core import layout
+from core.clients import bms as layout     # the BMS client profile
 from core.excel_reader import clean_sheet, detect_header_row, read_raw_sheets
 from core.pdf_builder import (LayoutError, agent_for_border, build_pdf, document_values,
                               format_date, load_template, pymupdf)
@@ -19,7 +19,7 @@ def money(text):
 
 def values_for(truck, tonnage, packages=Decimal("40")):
     return document_values(truck, Decimal(tonnage), packages, "12-Oct-26", layout.DEFAULT_PRICES,
-                           layout.DEFAULT_FREIGHT1, layout.DEFAULT_FREIGHT2)
+                           layout.DEFAULT_FREIGHT1, layout.DEFAULT_FREIGHT2, client=layout)
 
 
 TRUCK = Truck(row=6, invoice_no="XX-TEST-001", driver="JOHN TEST", passport="P0000001",
@@ -45,7 +45,7 @@ def test_formats():
 def test_amounts_round_half_up():
     v = document_values(TRUCK, Decimal("1.005"), Decimal("1"), "12-Oct-26",
                         {"coal": Decimal("1"), "freight1": Decimal("0"), "freight2": Decimal("0"),
-                         "insurance": Decimal("0")}, "a", "b")
+                         "insurance": Decimal("0")}, "a", "b", client=layout)
     assert v["amount_coal"] == "$1.01"
 
 
@@ -59,9 +59,9 @@ def test_wrong_pdf_is_refused():
     for _ in range(3):
         blank.new_page()
     with pytest.raises(LayoutError):
-        load_template(blank.tobytes())
+        load_template(blank.tobytes(), layout)
     with pytest.raises(LayoutError):
-        load_template(b"this is not a pdf")
+        load_template(b"this is not a pdf", layout)
 
 
 def test_output_has_three_pages_and_the_new_values(template):
@@ -84,7 +84,8 @@ def test_long_values_stay_inside_their_cells(template):
     values = document_values(long_truck, Decimal("42.5"), Decimal("1000"), "12-Oct-26",
                              layout.DEFAULT_PRICES, "Road freight outside DRC with extra long wording",
                              "Road freight inside DRC with extra long wording",
-                             agent={"name": "A VERY LONG AGENT NAME FOR TESTING", "mobile": "+000 000 000 000 000"})
+                             agent={"name": "A VERY LONG AGENT NAME FOR TESTING", "mobile": "+000 000 000 000 000"},
+                             client=layout)
     doc = pymupdf.open(stream=build_pdf(template, values), filetype="pdf")
     for spot in template["spots"]:
         text = values[spot["key"]]
@@ -114,7 +115,7 @@ def test_sixty_trucks_in_under_sixty_seconds(template, tmp_path):
     header = detect_header_row(raw)
     assert header == 4
     table = clean_sheet(raw, header)
-    trucks = read_trucks(table, guess_columns(table.columns), header)
+    trucks = read_trucks(table, guess_columns(table.columns, layout), header)
     check_trucks(trucks)
     assert len(trucks) == 60 and not any(t.errors for t in trucks)
     pdfs = [build_pdf(template, values_for(t, t.tonnage, t.packages)) for t in trucks]
@@ -126,9 +127,9 @@ def test_sixty_trucks_in_under_sixty_seconds(template, tmp_path):
 
 
 def test_clearance_agent_follows_the_exit_border(template):
-    assert agent_for_border(" mokambo ")["name"] == "Pacafic"
-    assert agent_for_border("SAKANIA")["name"] == "Oscar Levite"
-    assert agent_for_border("KASUMBALESA") is None
+    assert agent_for_border(" mokambo ", layout)["name"] == "Pacafic"
+    assert agent_for_border("SAKANIA", layout)["name"] == "Oscar Levite"
+    assert agent_for_border("KASUMBALESA", layout) is None
     text = pymupdf.open(stream=build_pdf(template, values_for(TRUCK, "40")), filetype="pdf")[0].get_text()
     assert "Contact person :Oscar Levite" in text and "Mobile :+243 997 595 381" in text
     assert "Pacafic" not in text
@@ -139,14 +140,14 @@ def test_unknown_border_needs_a_confirmed_agent():
     with pytest.raises(ValueError):
         values_for(other, "40")
     chosen = document_values(other, Decimal("40"), Decimal("40"), "12-Oct-26", layout.DEFAULT_PRICES,
-                             "a", "b", agent=layout.AGENTS["MOKAMBO"])
+                             "a", "b", agent=layout.AGENTS["MOKAMBO"], client=layout)
     assert chosen["agent_contact"] == "Contact person :Pacafic"
 
 
 def test_another_truck_of_the_same_format_is_accepted_as_sample():
     from conftest import make_pretend_sample
     other = load_template(make_pretend_sample({"invoice_no": "XX-TEST-1234", "driver": "ANOTHER DRIVER NAME",
-                                               "date": "03-Nov-26", "packages": "29", "weight": "42MT"}))
+                                               "date": "03-Nov-26", "packages": "29", "weight": "42MT"}), layout)
     assert other["sample"]["invoice_no"] == "XX-TEST-1234"
     assert other["sample"]["driver"] == "ANOTHER DRIVER NAME"
     assert len(other["spots"]) == len(layout.SPOTS)
@@ -155,4 +156,4 @@ def test_another_truck_of_the_same_format_is_accepted_as_sample():
 def test_a_value_in_the_wrong_format_is_refused():
     from conftest import make_pretend_sample
     with pytest.raises(LayoutError, match="quantity"):
-        load_template(make_pretend_sample({"quantity": "forty tonnes"}))
+        load_template(make_pretend_sample({"quantity": "forty tonnes"}), layout)

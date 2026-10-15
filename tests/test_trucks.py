@@ -3,6 +3,7 @@ from decimal import Decimal
 
 import pandas as pd
 
+from core.clients import bms as layout     # the BMS client profile
 from core.excel_reader import clean_sheet, detect_header_row
 from core.trucks import Truck, check_trucks, guess_columns, parse_tonnage, read_trucks
 
@@ -28,7 +29,7 @@ def load(data_rows):
     raw = raw_sheet(data_rows)
     header = detect_header_row(raw)
     table = clean_sheet(raw, header)
-    trucks = read_trucks(table, guess_columns(table.columns), header)
+    trucks = read_trucks(table, guess_columns(table.columns, layout), header)
     check_trucks(trucks)
     return header, trucks
 

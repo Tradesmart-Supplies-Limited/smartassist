@@ -179,8 +179,8 @@ def test_fixed_and_excel_quantity():
 
 def test_log_is_written(tmp_path):
     path = tmp_path / "log" / "instructions_log.csv"
-    ins.log_instruction(str(path), "skip truck 3", [{"type": "exclude_trucks"}], True)
-    ins.log_instruction(str(path), "make coffee", [], False)
+    ins.log_instruction(str(path), "skip truck 3", [{"type": "exclude_trucks"}], True, "bms")
+    ins.log_instruction(str(path), "make coffee", [], False, "bms")
     rows = list(csv.reader(open(path, encoding="utf-8")))
-    assert rows[0] == ["timestamp", "typed text", "validated actions", "applied"]
-    assert rows[1][1:] == ["skip truck 3", '[{"type": "exclude_trucks"}]', "yes"] and rows[2][3] == "no"
+    assert rows[0] == ["timestamp", "typed text", "validated actions", "applied", "client"]
+    assert rows[1][1:] == ["skip truck 3", '[{"type": "exclude_trucks"}]', "yes", "BMS"] and rows[2][3] == "no"

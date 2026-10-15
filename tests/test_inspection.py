@@ -4,7 +4,7 @@ import zipfile
 from decimal import Decimal
 
 from core import inspection as insp
-from core import layout
+from core.clients import bms as layout     # the BMS client profile
 from core.pdf_builder import build_pdf, document_values, pymupdf
 from core.trucks import Truck
 
@@ -23,7 +23,7 @@ def report(pages=2, label="Inspection photo"):
 
 def documents(template, truck):
     values = document_values(truck, Decimal("40"), Decimal("29"), "14-Oct-26", layout.DEFAULT_PRICES,
-                             layout.DEFAULT_FREIGHT1, layout.DEFAULT_FREIGHT2)
+                             layout.DEFAULT_FREIGHT1, layout.DEFAULT_FREIGHT2, client=layout)
     return build_pdf(template, values), values
 
 

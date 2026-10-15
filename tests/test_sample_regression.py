@@ -9,7 +9,7 @@ from decimal import Decimal
 
 import pytest
 
-from core import layout
+from core.clients import bms as layout     # the BMS client profile
 from core.pdf_builder import build_pdf, document_values, load_template, pymupdf
 from core.trucks import Truck
 
@@ -22,12 +22,12 @@ pytestmark = pytest.mark.skipif(not PDFS, reason="sample PDF not present")
 def rebuild_sample():
     with open(PDFS[0], "rb") as f:
         sample_bytes = f.read()
-    template = load_template(sample_bytes)
+    template = load_template(sample_bytes, layout)
     s = template["sample"]
     truck = Truck(row=0, invoice_no=s["invoice_no"], driver=s["driver"], passport=s["passport"],
                   horse=s["horse"], trailer1=s["trailer1"], trailer2=s["trailer2"], border=s["border"])
     values = document_values(truck, Decimal("40"), Decimal("40"), s["date"], layout.DEFAULT_PRICES,
-                             layout.DEFAULT_FREIGHT1, layout.DEFAULT_FREIGHT2)
+                             layout.DEFAULT_FREIGHT1, layout.DEFAULT_FREIGHT2, client=layout)
     return sample_bytes, template, build_pdf(template, values)
 
 

@@ -5,20 +5,9 @@ from decimal import Decimal, InvalidOperation
 
 import pandas as pd
 
-# The values we need for each truck: key -> (label shown in the app, usual column titles).
-# Column titles are compared in lower case with spaces and punctuation removed.
-FIELDS = {
-    "invoice_no": ("Invoice No.", ["invoiceno", "invoicenumber", "invoice"]),
-    "driver": ("Driver", ["driver", "drivername"]),
-    "passport": ("Passport No.", ["passportno", "passport"]),
-    "horse": ("Horse Reg", ["horsereg", "horse"]),
-    "trailer1": ("Trailer 1 Reg", ["trailerreg", "trailer1reg", "trailer1", "trailer"]),
-    "trailer2": ("Trailer 2 Reg (optional)", ["trailer2reg", "trailer2"]),
-    "tonnage": ("Tonnage", ["tonnage", "tonnagemt", "tons"]),
-    "packages": ("No. of packages", ["noofpackages", "packages", "noofbags", "bags"]),
-    "border": ("Exit border", ["exitborder", "border"]),
-}
-OPTIONAL = {"trailer2"}
+# Which Excel columns each client has (and their usual titles) is in that client's profile,
+# core/clients/<client>.py (FIELDS and OPTIONAL). Column titles are compared in lower case
+# with spaces and punctuation removed.
 
 # What people type when there is no second trailer.
 NO_TRAILER = {"", "N/A", "NA", "NIL", "NONE", "-"}
@@ -47,11 +36,11 @@ def simplify(title):
     return re.sub(r"[^a-z0-9]", "", str(title).lower())
 
 
-def guess_columns(columns):
-    """Match each field to an Excel column by its title. Returns {key: column or None}."""
+def guess_columns(columns, client):
+    """Match each of the client's fields to an Excel column by its title. Returns {key: column or None}."""
     by_simple = {simplify(c): c for c in columns}
     mapping = {}
-    for key, (_label, names) in FIELDS.items():
+    for key, (_label, names) in client.FIELDS.items():
         mapping[key] = next((by_simple[n] for n in names if n in by_simple), None)
     return mapping
 

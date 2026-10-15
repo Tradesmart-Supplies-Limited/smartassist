@@ -11,7 +11,6 @@ import os
 import re
 from datetime import date, datetime, timedelta
 
-from core import layout
 from core.pdf_builder import format_date
 
 # ---------- sanity limits ----------
@@ -26,7 +25,7 @@ KEY_PRICES = {"coal": "price_coal", "freight_1": "price_freight1",
               "freight_2": "price_freight2", "insurance": "price_insurance"}
 KEY_LABELS = {"freight_1": "freight1_text", "freight_2": "freight2_text"}
 KEY_SOURCE = "source"
-SOURCE_CLIENT = f"{layout.CLIENT_TONNAGE} MT for every truck, packages from the Excel (this client's rule)"
+SOURCE_CLIENT = "This client's tonnage for every truck, packages from the Excel"
 SOURCE_EXCEL = "From the Excel (each truck's own figures)"
 SOURCE_FIXED = "Fixed figures for every truck"
 KEY_TONNAGE = "fixed_tonnage"
@@ -333,8 +332,9 @@ def _picked_trucks(action, trucks):
     return list(unique.values()), reasons
 
 
-def check_action(action, trucks, today, typed):
-    """One validated action -> list of plan items: {"ok", "say", "set"/"exclude"/"only"}."""
+def check_action(action, trucks, today, typed, client=None):
+    """One validated action -> list of plan items: {"ok", "say", "set"/"exclude"/"only"}.
+    With a client profile, an order about a field that client does not have is refused."""
     kind = action["type"]
     per_truck = action["trucks"] or action["range_from"] or action["range_to"]
 
@@ -344,6 +344,13 @@ def check_action(action, trucks, today, typed):
     reason = not_in_order(action, typed)
     if reason:
         return refuse(reason)
+    if client is not None:
+        if kind == "set_price" and action["item"] and action["item"] not in client.PRICE_ITEMS:
+            return refuse(f"{client.NAME} has no {ITEM_NAMES[action['item']]} price")
+        if kind == "set_freight_label" and action["line"] and action["line"] not in client.FREIGHT_LINES:
+            return refuse(f"{client.NAME} has no {ITEM_NAMES[action['line']]}")
+        if kind == "fixed_quantity" and client.CLIENT_TONNAGE is None and action["tonnage"] is not None:
+            return refuse(f"{client.NAME} has no fixed tonnage setting")
     untyped = []
     if action["trucks"]:
         action = dict(action)
@@ -352,7 +359,7 @@ def check_action(action, trucks, today, typed):
         if not per_truck:
             return refuse("truck(s) " + ", ".join(untyped) + " were not in your order, so they were ignored")
     if untyped:
-        return check_action(action, trucks, today, typed) + refuse(
+        return check_action(action, trucks, today, typed, client) + refuse(
             "truck(s) " + ", ".join(untyped) + " were not in your order, so they were ignored")
 
     if kind in ("exclude_trucks", "only_trucks"):
@@ -436,12 +443,12 @@ def tidy_actions(actions):
     return tidy
 
 
-def make_plan(actions, unsupported, dropped, trucks, today, typed):
+def make_plan(actions, unsupported, dropped, trucks, today, typed, client=None):
     """Returns {"understood": [ok items], "not_done": [plain-English reasons]}."""
     understood, not_done = [], []
     actions = tidy_actions(actions)
     for action in actions:
-        for item in check_action(action, trucks, today, typed):
+        for item in check_action(action, trucks, today, typed, client):
             (understood if item["ok"] else not_done).append(item if item["ok"] else item["say"])
     not_done += [f"Not supported: {u}" for u in unsupported]
     if dropped:
@@ -451,13 +458,14 @@ def make_plan(actions, unsupported, dropped, trucks, today, typed):
     return {"understood": understood, "not_done": not_done}
 
 
-def read_order(text, trucks, today, chat):
+def read_order(text, trucks, today, chat, client=None):
     """Ask the model (through `chat(system, user, schema) -> str`) and build a plan.
-    Retries once if the answer is not valid JSON. Raises InvalidReply after that."""
+    Retries once if the answer is not valid JSON. Raises InvalidReply after that.
+    client: the active client profile; orders about fields it does not have are refused."""
     for _attempt in range(2):
         try:
             actions, unsupported, dropped = validate_reply(chat(SYSTEM_PROMPT, text, SCHEMA))
-            plan = make_plan(actions, unsupported, dropped, trucks, today, text)
+            plan = make_plan(actions, unsupported, dropped, trucks, today, text, client)
             plan["actions"] = actions
             return plan
         except InvalidReply:
@@ -480,13 +488,13 @@ def apply_plan(plan, state):
     return state
 
 
-def log_instruction(path, text, actions, applied):
-    """Add one line to the instructions log (CSV)."""
+def log_instruction(path, text, actions, applied, client_id=""):
+    """Add one line to the instructions log (CSV), with the client it was for."""
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     new_file = not os.path.exists(path)
     with open(path, "a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         if new_file:
-            writer.writerow(["timestamp", "typed text", "validated actions", "applied"])
+            writer.writerow(["timestamp", "typed text", "validated actions", "applied", "client"])
         writer.writerow([datetime.now().isoformat(timespec="seconds"), text,
-                         json.dumps(actions, ensure_ascii=False), "yes" if applied else "no"])
+                         json.dumps(actions, ensure_ascii=False), "yes" if applied else "no", client_id.upper()])

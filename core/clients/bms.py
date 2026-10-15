@@ -1,4 +1,8 @@
-"""The fields table: where every per-truck value sits in the sample PDF.
+"""Client profile: BMS (Brother Mining SASU, coal from Kitwe). Everything DocuLoop needs to know about
+this client lives here: how to recognise its files, its Excel columns, where every per-truck value sits
+in its sample PDF, and its default job settings.
+
+The fields table: where every per-truck value sits in the sample PDF.
 
 Each spot is (page, x, y, key, align).
 - page:  0 = road manifest, 1 = commercial invoice, 2 = packing list
@@ -10,6 +14,42 @@ Each spot is (page, x, y, key, align).
          "right" keeps its right edge where the old one ended
 """
 from decimal import Decimal
+
+ID = "bms"
+NAME = "BMS"
+READY = True            # this profile is complete and can build documents
+
+# ---- recognition (from file CONTENT only, never from file names) ----
+# Texts expected in the sample PDF's first 3 pages (spaces do not matter).
+PDF_FINGERPRINT = ["ROAD MANIFEST", "COMMERCIAL INVOICE", "PACKING LIST", "BROTHER MINING SASU",
+                   "TOTAL CIP BMS USD, DRC", "DRC Clearance Agent"]
+# Column titles expected in the Excel (compared in lower case without spaces or punctuation),
+# and words expected somewhere in its title rows.
+EXCEL_FINGERPRINT = ["Driver", "Passport No.", "Horse Reg", "Trailer Reg", "Tonnage", "No. OF PACKAGES",
+                     "INVOICE No.", "EXIT BORDER"]
+EXCEL_WORDS = ["BMS"]
+
+# ---- the Excel: field key -> (label shown in the app, usual column titles, simplified) ----
+FIELDS = {
+    "invoice_no": ("Invoice No.", ["invoiceno", "invoicenumber", "invoice"]),
+    "driver": ("Driver", ["driver", "drivername"]),
+    "passport": ("Passport No.", ["passportno", "passport"]),
+    "horse": ("Horse Reg", ["horsereg", "horse"]),
+    "trailer1": ("Trailer 1 Reg", ["trailerreg", "trailer1reg", "trailer1", "trailer"]),
+    "trailer2": ("Trailer 2 Reg (optional)", ["trailer2reg", "trailer2"]),
+    "tonnage": ("Tonnage", ["tonnage", "tonnagemt", "tons"]),
+    "packages": ("No. of packages", ["noofpackages", "packages", "noofbags", "bags"]),
+    "border": ("Exit border", ["exitborder", "border"]),
+}
+OPTIONAL = {"trailer2"}
+
+# ---- the typed-instruction assistant: what it may change for this client ----
+PRICE_ITEMS = ["coal", "freight_1", "freight_2", "insurance"]
+FREIGHT_LINES = ["freight_1", "freight_2"]
+EXAMPLES = ["Coal price is 75"]
+
+# Names of the 3 pages, in order (used for the preview tabs).
+PAGE_NAMES = ["Manifest", "Invoice", "Packing list"]
 
 PAGES = 3   # only pages 1-3 of the sample are used; the inspection report is never copied
 
