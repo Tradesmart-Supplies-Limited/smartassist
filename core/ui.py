@@ -3,6 +3,7 @@
 All colours come from the [theme] block of .streamlit/config.toml (the one place to change them).
 Everything is local: system fonts, inline SVG and Streamlit's own bundled icons.
 """
+import base64
 import html
 import os
 import tomllib
@@ -48,6 +49,16 @@ LOGO = """<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
 <path d="M7 19h12M7 22h8" stroke="currentColor" stroke-width="2"/></svg>"""
 
 
+def _logos():
+    """The Tradesmart Supplies and OGEFREM logos (assets/logos.png), embedded in the page itself."""
+    path = os.path.join(PROJECT, "assets", "logos.png")
+    if not os.path.exists(path):
+        return ""
+    with open(path, "rb") as f:
+        data = base64.b64encode(f.read()).decode("ascii")
+    return f'<img class="dl-logos" src="data:image/png;base64,{data}" alt="Tradesmart Supplies Limited and OGEFREM">'
+
+
 def apply_style():
     """Load assets/style.css once per page, with the theme colours as CSS variables."""
     with open(os.path.join(PROJECT, "assets", "style.css"), encoding="utf-8") as f:
@@ -62,7 +73,7 @@ def header(assistant_ok, model):
     left.markdown(
         f'<div class="dl-header" style="color:{COLORS["accent"]}">{LOGO}<div>'
         '<h1>DocuLoop</h1><p>Road manifest, commercial invoice and packing list from your Excel sheet</p>'
-        '</div></div>', unsafe_allow_html=True)
+        f'</div>{_logos()}</div>', unsafe_allow_html=True)
     with right:
         if assistant_ok:
             st.badge("Assistant ready", icon=":material/smart_toy:", color="green")
