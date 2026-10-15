@@ -67,8 +67,8 @@ Things learned while building:
 
 ## Rules
 - Prices USD/MT: coal 70, freight 1 88, freight 2 140, insurance 2. Only coal is shown and editable
-  in the UI (owner's request, 2026-10-14); the other three keep their session_state keys and defaults
-  and can still be changed by a typed instruction.
+  in the UI (owner's request, 2026-10-14); the other three keep their defaults and, since the
+  Instructions box was removed (2026-10-15), can only be changed in `core\clients\bms.py`.
 - Amount = quantity x price with `Decimal`, `ROUND_HALF_UP`. Total = sum of the four amounts.
 - Quantities (changed on the owner's request, 2026-10-14): the default is this client's rule,
   `bms.CLIENT_TONNAGE` = 40 MT for every truck with packages from the Excel; an unreadable Excel
@@ -104,7 +104,12 @@ Things learned while building:
 - BMS regression: `tests\test_bms_regression.py` compares every word and position of 4 invented trucks
   with `tests\bms_reference.json`, made with the code before the change.
 
-## Typed instructions (Step 3, optional)
+## Typed instructions (REMOVED from the screen on 2026-10-15, owner's request)
+- The Instructions box, its example chips, Apply/Discard and the "Active changes" panel were removed
+  from `app.py`. The code below (`core\instructions.py`, `core\llm.py`, tests, benchmark) is kept so the
+  box can be brought back. Without it, the hidden freight 1 / freight 2 / insurance prices can only be
+  changed in `core\clients\bms.py`. The header ticker still shows the assistant status.
+- What follows describes the assistant as it was built.
 - Files: `core\instructions.py` (schema, prompt, validation, truck/date lookup, limits, apply, log),
   `core\llm.py` (Ollama client; `OLLAMA_URL` and `MODEL` live only there), the box in `app.py`.
 - Hard rules: orders change Step 3 settings and truck selection only, never a figure inside a document

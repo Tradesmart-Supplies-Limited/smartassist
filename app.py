@@ -23,7 +23,6 @@ from core.trucks import cell_text, check_trucks, guess_columns, read_trucks, sim
 
 NO_COLUMN = "(none)"
 HERE = os.path.dirname(os.path.abspath(__file__))
-LOG_PATH = os.path.join(HERE, "output", "instructions_log.csv")
 ERROR_LOG = os.path.join(HERE, "output", "error_log.txt")
 
 st.set_page_config(page_title="DocuLoop", page_icon=":material/local_shipping:", layout="wide")
@@ -289,9 +288,6 @@ def serial_no(truck):
     return cell_text(table.iloc[truck.row - int(header_row) - 2][sn_column]) if sn_column else ""
 
 
-truck_refs = [{"row": t.row, "sn": serial_no(t), "invoice_no": t.invoice_no, "horse": t.horse,
-               "driver": t.driver} for t in trucks]
-
 # A different Excel (or sheet, or title row) means earlier truck orders no longer apply.
 xl_id = (xl_file.name, xl_file.size, sheet_name, int(header_row))
 if st.session_state.get("xl_id") != xl_id:
@@ -314,90 +310,12 @@ for item, name in PRICE_NAMES.items():
 for key, value in DEFAULTS.items():
     st.session_state.setdefault(key, value)
 
-# Example orders shown as chips; clicking one fills the order box (it is not applied).
-EXAMPLES = client.EXAMPLES          # example orders for this client
-
-
-def apply_pending():
-    """Apply button: write the understood order into the settings, then log it."""
-    pending = st.session_state.pop("pending")
-    ins.apply_plan(pending["plan"], st.session_state)
-    ins.log_instruction(LOG_PATH, pending["text"], pending["plan"]["actions"], True, client.ID)
-    st.session_state.instruction_text = ""
-
-
-def discard_pending():
-    """Discard button: change nothing, only log it."""
-    pending = st.session_state.pop("pending")
-    ins.log_instruction(LOG_PATH, pending["text"], pending["plan"]["actions"], False, client.ID)
-
-
-def clear_instructions():
-    """Back to the default settings, with no truck excluded."""
-    for key, value in DEFAULTS.items():
-        st.session_state[key] = value
-    for key in (ins.KEY_EXCLUDED, ins.KEY_ONLY, ins.KEY_ACTIVE):
-        st.session_state.pop(key, None)
-
-
-def use_example(text):
-    """Example chip: put the example in the order box."""
-    st.session_state.instruction_text = text
-
-
 def md(text):
     """Show $ signs as $ (Streamlit would otherwise read them as maths)."""
     return text.replace("$", "\\$")
 
 
 with step3_card:
-    # ---- the instruction assistant, styled as a command bar ----
-    with st.container(border=True):
-        st.markdown("**:material/smart_toy: Instructions (optional)**")
-        if reader_ok:
-            st.caption(reader_message + " Orders change the settings below only after you click Apply.")
-            bar, button = st.columns([5, 1], vertical_alignment="bottom")
-            bar.text_area("Type an order in plain English", key="instruction_text", height=68,
-                          placeholder="e.g. coal is 75")
-            read_clicked = button.button("Read instruction", key="read_instruction", type="primary",
-                                         icon=":material/send:", disabled="pending" in st.session_state)
-            chips = st.columns(len(EXAMPLES) + 2)
-            chips[0].caption("Try:")
-            for n, example in enumerate(EXAMPLES):
-                chips[n + 1].button(example, key=f"example_{n}", type="tertiary", on_click=use_example,
-                                    args=(example,))
-            if read_clicked:
-                typed = st.session_state.instruction_text.strip()
-                if typed:
-                    with st.spinner("Reading the order... the first one can take up to a minute while the model loads."):
-                        try:
-                            plan = ins.read_order(typed, truck_refs, date.today(), llm.chat, client)
-                            st.session_state.pending = {"text": typed, "plan": plan}
-                        except (llm.LLMError, ins.InvalidReply) as error:
-                            st.warning(f"The order could not be read. {error} Use the settings below by hand.",
-                                       icon=":material/warning:")
-        else:
-            st.info(reader_message, icon=":material/cloud_off:")
-
-        pending = st.session_state.get("pending")
-        if pending:
-            with st.container(border=True):
-                st.markdown(md(f"**Your order:** {pending['text']}"))
-                understood = pending["plan"]["understood"]
-                st.markdown("**:material/check_circle: Understood as:**" +
-                            ("" if understood else " nothing that can be applied."))
-                for item in understood:
-                    st.markdown(md(f"- {item['say']}"))
-                if pending["plan"]["not_done"]:
-                    st.markdown("**:material/block: Not done:**")
-                    for reason in pending["plan"]["not_done"]:
-                        st.markdown(md(f"- {reason}"))
-                b1, b2, _ = st.columns([1, 1, 4])
-                b1.button("Apply", type="primary", key="apply_instruction", on_click=apply_pending,
-                          disabled=not understood, icon=":material/done:")
-                b2.button("Discard", key="discard_instruction", on_click=discard_pending,
-                          icon=":material/close:")
-
     st.markdown("##### :material/event: Date and freight wording")
     c1, c2, c3 = st.columns(3)
     doc_date = c1.date_input("Date on the documents", format="DD/MM/YYYY", key=ins.KEY_DATE)
@@ -548,14 +466,6 @@ with tiles:
 with st.container(border=True):
     step4 = st.empty()
     ui.step_header(step4, 4, "Generate")
-    active = st.session_state.get(ins.KEY_ACTIVE, [])
-    if active:
-        with st.container(border=True):
-            st.markdown("**Active changes from instructions**")
-            for line in active:
-                st.badge(md(line), icon=":material/tune:", color="blue")
-            st.button("Clear all instructions (back to the default settings)", key="clear_instructions",
-                      on_click=clear_instructions, icon=":material/restart_alt:")
     if st.button("Generate PDFs", type="primary", disabled=not jobs, width="stretch",
                  icon=":material/picture_as_pdf:"):
         bar = st.progress(0.0, text="Starting...")
