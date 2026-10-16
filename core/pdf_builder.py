@@ -162,8 +162,9 @@ def load_template(pdf_bytes, client):
     """
     try:
         source = pymupdf.open(stream=pdf_bytes, filetype="pdf")
-    except Exception as error:
-        raise LayoutError(f"This file cannot be opened as a PDF ({error}).")
+    except Exception:
+        raise LayoutError("This file cannot be opened as a PDF. Check that it is a finished truck PDF "
+                          "and upload it again.")
     layout = client                      # the client's fields table and formats
     if not client.READY:
         raise LayoutError(f"{client.NAME} is not set up yet, so its sample cannot be read.")

@@ -72,6 +72,25 @@
 .st-key-generate_pdfs button:not(:disabled) p,
 .st-key-generate_pdfs button:not(:disabled) span { color: var(--dl-text); font-weight: 600; }
 
+/* Uploaded files show a real file icon: red PDF for .pdf, green Excel for .xlsx / .xlsm / .xls.
+   Streamlit puts the file name in the chip's aria-label ("name.pdf, 32.0B"). The two brand colours
+   (PDF red #E2231A, Excel green #217346) live only inside these two icons. */
+[data-testid="stFileChip"][aria-label*=".pdf," i] > div:first-child svg,
+[data-testid="stFileChip"][aria-label*=".xls" i] > div:first-child svg { display: none; }
+[data-testid="stFileChip"][aria-label*=".pdf," i] > div:first-child,
+[data-testid="stFileChip"][aria-label*=".xls" i] > div:first-child { background: transparent; }
+[data-testid="stFileChip"][aria-label*=".pdf," i] > div:first-child::before,
+[data-testid="stFileChip"][aria-label*=".xls" i] > div:first-child::before {
+  content: ""; display: inline-block; width: 1.75rem; height: 1.75rem;
+  background-repeat: no-repeat; background-position: center; background-size: contain;
+}
+[data-testid="stFileChip"][aria-label*=".pdf," i] > div:first-child::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 1h9l6 6v16H5z' fill='%23E2231A'/%3E%3Cpath d='M14 1v6h6' fill='%23F4A19B'/%3E%3Ctext x='12.5' y='18' font-family='Arial' font-size='6.5' font-weight='700' fill='white' text-anchor='middle'%3EPDF%3C/text%3E%3C/svg%3E");
+}
+[data-testid="stFileChip"][aria-label*=".xls" i] > div:first-child::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='2' y='2' width='20' height='20' rx='3' fill='%23217346'/%3E%3Cpath d='M8 7l8 10M16 7l-8 10' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
 /* Numbered step titles */
 .dl-step { display: flex; align-items: center; gap: 10px; margin: 0 0 2px 0; }
 .dl-step .dl-num {

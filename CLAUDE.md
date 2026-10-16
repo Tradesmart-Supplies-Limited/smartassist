@@ -163,6 +163,9 @@ Things learned while building:
 - The Generate PDFs button (key `generate_pdfs`) uses the logo's cerulean #4CA8DC (`ui.COLORS["cerulean"]`,
   the one colour kept outside config.toml) with dark text (5.8:1). Do NOT put it in the theme's blueColor:
   that also colours the info boxes' text, which then fails contrast (3.7:1).
+- Uploaded files show a file icon chosen from the chip's aria-label (the file name Streamlit shows):
+  red PDF icon for ".pdf", green Excel icon for ".xls*". The brand colours (#E2231A, #217346) live only
+  inside those two inline SVG icons in style.css. Cosmetic only: file TYPE checks still use content.
 - Never write "<" in `assets\style.css` (not even in a comment): the page's safety filter then drops the
   whole style. `tests\test_style.py` checks this.
 - Inspection report downloads offer only "Combined single PDF per truck" (owner's requests: the
