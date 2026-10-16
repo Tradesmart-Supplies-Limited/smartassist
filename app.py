@@ -310,7 +310,8 @@ DEFAULTS = {
     ins.KEY_TONNAGE: 40.0,
     ins.KEY_PACKAGES: 40,
 }
-PRICE_NAMES = {"coal": "coal", "freight_1": "freight1", "freight_2": "freight2", "insurance": "insurance"}
+ALL_PRICE_NAMES = {"coal": "coal", "freight_1": "freight1", "freight_2": "freight2", "insurance": "insurance"}
+PRICE_NAMES = {item: ALL_PRICE_NAMES[item] for item in client.PRICE_ITEMS}     # this client's invoice lines
 for item, name in PRICE_NAMES.items():
     DEFAULTS[ins.KEY_PRICES[item]] = float(client.DEFAULT_PRICES[name])
 for key, value in DEFAULTS.items():
@@ -387,7 +388,8 @@ with st.container(border=True):
     CHOOSE = "(choose the agent)"
     confirmed_agents = {}
     unknown_borders = sorted({t.border for t in trucks
-                              if not t.errors and not left_out(t) and agent_for_border(t.border, client) is None})
+                              if client.AGENTS and not t.errors and not left_out(t)
+                              and agent_for_border(t.border, client) is None})
     if unknown_borders:
         with st.container(border=True):
             st.warning("Please confirm the DRC clearance agent: these exit borders have no agent on file. "
@@ -410,7 +412,7 @@ with st.container(border=True):
             status = "Excluded by instruction"
         elif truck.errors:
             status = "SKIPPED: " + "; ".join(truck.errors)
-        elif agent is None:
+        elif client.AGENTS and agent is None:
             status = "WAITING: confirm the clearance agent above"
         else:
             values = document_values(truck, tonnage, packages, date_text, prices, freight1, freight2, agent,
@@ -425,7 +427,7 @@ with st.container(border=True):
             "Excel row": truck.row, "S/N": serial_no(truck), "Invoice No.": truck.invoice_no,
             "Driver": truck.driver, "Passport": truck.passport, "Horse": truck.horse,
             "Trailer 1": truck.trailer1, "Trailer 2": truck.trailer2, "Border": truck.border,
-            "Clearance agent": agent["name"] if agent else "",
+            "Clearance agent": agent["name"] if agent else ("as in the sample" if not client.AGENTS else ""),
             "Tonnage": two_decimals(tonnage) if tonnage is not None else truck.tonnage_text,
             "Packages": str(packages) if packages is not None else truck.packages_text,
             "Invoice total": total, "Details": "" if status == "OK" else status,
@@ -455,7 +457,7 @@ with st.container(border=True):
         st.error("Skipped trucks get no PDF. Correct them in the Excel and upload it again.", icon=":material/error:")
 
     # Tell the manager when the sample shows other figures than the Excel for the same invoice.
-    sample_tonnage = Decimal(sample["weight"][:-2])        # "40MT" -> 40
+    sample_tonnage = Decimal(re.sub(r"[^0-9.]", "", sample["weight"]))    # "40MT" or "42" -> the number
     sample_packages = Decimal(sample["packages"])
     for truck in trucks:
         if truck.invoice_no != sample["invoice_no"] or truck.errors:

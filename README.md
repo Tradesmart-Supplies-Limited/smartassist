@@ -42,7 +42,11 @@ If step 3 says "running scripts is disabled", use this instead of steps 3-4:
 At the top, choose the client: **BMS** or **GCK**. The steps then ask for that client's files
 (for example "Upload the BMS sample PDF"), and the PDFs are named with the client, e.g.
 `BMS_YS-BMS10-288.pdf`. Changing the client clears the loaded files (DocuLoop asks first if PDFs were
-already made). **GCK is not set up yet**: it shows a message until GCK's sample and Excel are added.
+already made). Each client keeps its own rules:
+- **BMS:** always 40.00 MT and 40 packages; the clearance agent follows the exit border.
+- **GCK:** tonnage and packages exactly as the Excel gives them (e.g. 43T = 43.00 MT); prices 40 / 120 / 145
+  (coal / freight outside DRC / freight inside DRC, no insurance line); the clearance agent stays as the
+  GCK sample shows it. Upload GCK's own sample PDF and Excel, and GCK's inspection report once.
 
 File names do not matter: DocuLoop recognises a client's files by what is inside them. If a file looks
 like it belongs to the other client, DocuLoop warns you and offers to switch. If you drop an Excel in

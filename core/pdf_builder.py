@@ -83,12 +83,15 @@ def agent_for_border(border, client):
 def document_values(truck, tonnage, packages, date_text, prices, freight1, freight2, agent=None, *, client):
     """Every text that goes into one truck's PDF, as {key: text}.
 
-    agent: the clearance agent ({"name", "mobile"}). If not given, it follows the truck's exit border;
-    a border without a known agent must be confirmed by the manager first (the app asks).
+    agent: the clearance agent ({"name", "mobile"}), only for clients whose agent follows the exit border
+    (client.AGENTS, e.g. BMS). If not given, it follows the truck's border; a border without a known agent
+    must be confirmed by the manager first (the app asks). Clients without AGENTS (e.g. GCK) keep the
+    agent exactly as their sample shows it.
     """
-    agent = agent or agent_for_border(truck.border, client)
-    if agent is None:
-        raise ValueError(f"No clearance agent is known for exit border '{truck.border}'.")
+    if client.AGENTS:
+        agent = agent or agent_for_border(truck.border, client)
+        if agent is None:
+            raise ValueError(f"No clearance agent is known for exit border '{truck.border}'.")
     amounts = {name: amount(tonnage, price) for name, price in prices.items()}
     total = sum(amounts.values(), Decimal("0"))
     quantity = two_decimals(tonnage) + " MT"
@@ -104,13 +107,14 @@ def document_values(truck, tonnage, packages, date_text, prices, freight1, freig
         "packages": plain(packages),
         "bags": two_decimals(packages),
         "quantity": quantity,
-        "weight": plain(tonnage) + "MT",
+        "weight": plain(tonnage) + getattr(client, "WEIGHT_SUFFIX", "MT"),   # BMS "40MT", GCK "42"
         "freight1_text": freight1,
         "freight2_text": freight2,
         "total": "$" + two_decimals(total),
-        "agent_contact": "Contact person :" + agent["name"],
-        "agent_mobile": "Mobile :" + agent["mobile"],
     }
+    if client.AGENTS:
+        values["agent_contact"] = "Contact person :" + agent["name"]
+        values["agent_mobile"] = "Mobile :" + agent["mobile"]
     for name in prices:
         values["price_" + name] = "$" + two_decimals(prices[name])
         values["amount_" + name] = "$" + two_decimals(amounts[name])

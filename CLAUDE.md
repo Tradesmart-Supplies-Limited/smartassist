@@ -90,9 +90,14 @@ Things learned while building:
   the Excel says (42 stays 42, 43 stays 43; no 40 MT rule, `CLIENT_TONNAGE = None`, default quantity
   source = the Excel). The person named for the border / clearance agent stays as the sample or Excel
   shows it (no AGENTS swap by border) unless the owner instructs otherwise. Nothing else is changed.
-- `core\clients\gck.py` is a PLACEHOLDER (READY = False): GCK's sample PDF and Excel were not available.
-  Never guess GCK values: fill this profile from real GCK files, then set READY and write the GCK test
-  in `tests\test_clients.py` (currently skipped).
+- `core\clients\gck.py` is READY since 2026-10-16, built from the real GCK sample YS-GCK03-026.pdf and
+  "KITWE TO GCK LOADING ORDER.xlsx" (both in `samples\GCK\`, git-ignored; inspection report
+  YS-GCK03-026-4-6.pdf installed as `output\inspection_report_GCK.pdf`). Differences from BMS: US-Letter
+  pages; 3 invoice lines (coal 40, freight 1 120, freight 2 145; no insurance, `PRICE_ITEMS`); weight
+  written "42" (`WEIGHT_SUFFIX = ""`); "Border of Entry" on the packing list; no invoice top row;
+  `AGENTS = {}` so the agent text stays as the sample shows it (`document_values` adds agent lines only
+  when `client.AGENTS`). Tests in `tests\test_clients.py` rebuild the GCK sample identically and check
+  that GCK values match its Excel (43T = 43.00 MT, total 43 x 305).
 - `core\clients\__init__.py`: `get_client`, `list_clients`, `detect_client_from_pdf`,
   `detect_client_from_excel` (content only, never file names), `pairing_problem`.
 - Core functions take the client: `load_template(bytes, client)`, `document_values(..., client=client)`,

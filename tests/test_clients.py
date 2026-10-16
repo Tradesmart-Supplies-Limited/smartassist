@@ -32,11 +32,11 @@ def bms_like_sheet():
 def test_registry():
     assert [c.ID for c in list_clients()] == ["bms", "gck"]
     assert get_client("bms") is bms and bms.READY
-    assert get_client("gck") is gck and not gck.READY        # waiting for GCK's files
+    assert get_client("gck") is gck and gck.READY            # set up from GCK's real sample (2026-10-16)
 
 
-def test_gck_cannot_build_until_set_up():
-    with pytest.raises(LayoutError, match="not set up yet"):
+def test_a_bms_sample_is_refused_by_the_gck_layout_check():
+    with pytest.raises(LayoutError, match="does not match"):
         load_template(make_pretend_sample(), gck)
 
 
@@ -86,9 +86,68 @@ def test_matching_pair_has_no_problem():
     assert pairing_problem("bms", None, "sample PDF") is None     # not recognised: the layout check decides
 
 
-@pytest.mark.skipif(not GCK_FILES, reason="GCK sample and Excel not available yet")
+GCK_PDFS = [f for f in GCK_FILES if f.lower().endswith(".pdf") and "-4-6" not in f]
+GCK_EXCELS = [f for f in GCK_FILES if f.lower().endswith(".xlsx")]
+needs_gck = pytest.mark.skipif(not (GCK_PDFS and GCK_EXCELS), reason="GCK sample and Excel not present")
+
+
+@needs_gck
+def test_gck_files_are_recognised_as_gck():
+    from core.excel_reader import read_raw_sheets
+    import io
+    assert detect_client_from_pdf(open(GCK_PDFS[0], "rb").read())[0] == "gck"
+    raw = list(read_raw_sheets(io.BytesIO(open(GCK_EXCELS[0], "rb").read()), "Book1.xlsx").values())[0]
+    assert detect_client_from_excel(raw)[0] == "gck"
+    assert pairing_problem("bms", "gck", "Excel sheet")          # a GCK file with BMS selected is flagged
+
+
+@needs_gck
+def test_gck_sample_rebuilds_its_own_truck_identically():
+    from decimal import Decimal
+    from core.pdf_builder import build_pdf, document_values
+    from core.trucks import Truck
+    data = open(GCK_PDFS[0], "rb").read()
+    template = load_template(data, gck)
+    s = template["sample"]
+    truck = Truck(row=0, invoice_no=s["invoice_no"], driver=s["driver"], passport=s["passport"], horse=s["horse"],
+                  trailer1=s["trailer1"], trailer2=s["trailer2"], border=s["border"])
+    values = document_values(truck, Decimal(s["weight"]), Decimal(s["packages"]), s["date"], gck.DEFAULT_PRICES,
+                             s["freight1_text"], s["freight2_text"], client=gck)
+    new = pymupdf.open(stream=build_pdf(template, values), filetype="pdf")
+    old = pymupdf.open(stream=data, filetype="pdf")
+    words = lambda page: sorted(w[4] for w in page.get_text("words"))
+    assert len(new) == 3
+    for n in range(3):
+        assert words(new[n]) == words(old[n]), f"page {n + 1} differs"
+
+
+@needs_gck
 def test_gck_pdf_values_match_its_excel():
-    pytest.fail("Fill in the GCK profile from its real sample and Excel, then write this test.")
+    """GCK rule: tonnage, packages and every value are kept exactly as the Excel gives them."""
+    import io
+    from decimal import Decimal
+    from core.excel_reader import clean_sheet, detect_header_row, read_raw_sheets
+    from core.pdf_builder import build_pdf, document_values
+    from core.trucks import check_trucks, guess_columns, read_trucks
+    raw = list(read_raw_sheets(io.BytesIO(open(GCK_EXCELS[0], "rb").read()), "x.xlsx").values())[0]
+    header = detect_header_row(raw)
+    table = clean_sheet(raw, header)
+    trucks = read_trucks(table, guess_columns(table.columns, gck), header)
+    check_trucks(trucks)
+    truck = next(t for t in trucks if not t.errors)
+    template = load_template(open(GCK_PDFS[0], "rb").read(), gck)
+    values = document_values(truck, truck.tonnage, truck.packages, "16-Oct-26", gck.DEFAULT_PRICES,
+                             gck.DEFAULT_FREIGHT1, gck.DEFAULT_FREIGHT2, client=gck)
+    pages = [" ".join(p.get_text().split()) for p in pymupdf.open(stream=build_pdf(template, values), filetype="pdf")]
+    tonnage = f"{truck.tonnage:.2f} MT"                           # e.g. 43T in the Excel -> "43.00 MT"
+    assert tonnage in pages[0] and tonnage in pages[1]
+    for value in (truck.invoice_no, truck.driver.strip(), truck.passport, truck.horse, truck.border):
+        assert value in pages[0], value
+    total = truck.tonnage * (Decimal("40") + Decimal("120") + Decimal("145"))
+    assert f"${total:,.2f}" in pages[1]                            # three lines, no insurance
+    sample_page1 = " ".join(pymupdf.open(GCK_PDFS[0])[0].get_text().split())
+    agent_line = sample_page1[sample_page1.index("Contact person :"):][:30]
+    assert agent_line in pages[0]                                  # agent kept as the sample shows it
 
 
 # ---------- the instruction assistant follows the active client ----------
@@ -97,7 +156,8 @@ def test_orders_about_fields_the_client_lacks_are_refused():
     answer = json.dumps({"actions": [dict(type="set_price", item="coal", price=75, trucks=None, range_from=None,
                                           range_to=None, date_text=None, line=None, text=None, tonnage=None,
                                           packages=None)], "unsupported": []})
-    plan = ins.read_order("coal price is 75", [], date(2026, 10, 15), lambda *a: answer, client=gck)
-    assert plan["understood"] == [] and "GCK has no Coal price" in plan["not_done"][0]
+    insurance = answer.replace('"coal"', '"insurance"')
+    plan = ins.read_order("insurance price is 75", [], date(2026, 10, 15), lambda *a: insurance, client=gck)
+    assert plan["understood"] == [] and "GCK has no Insurance price" in plan["not_done"][0]
     plan = ins.read_order("coal price is 75", [], date(2026, 10, 15), lambda *a: answer, client=bms)
     assert plan["understood"][0]["set"] == {"price_coal": 75.0}
