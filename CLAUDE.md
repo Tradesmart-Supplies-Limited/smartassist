@@ -166,6 +166,8 @@ Things learned while building:
 - Uploaded files show a file icon chosen from the chip's aria-label (the file name Streamlit shows):
   red PDF icon for ".pdf", green Excel icon for ".xls*". The brand colours (#E2231A, #217346) live only
   inside those two inline SVG icons in style.css. Cosmetic only: file TYPE checks still use content.
+- Browser-tab icon: `assets\favicon.png`, a truck in the logo's cerulean #4CA8DC (box) and green
+  #84C440 (cab), set with `page_icon` in `app.py` (owner's request, 2026-10-16).
 - Never write "<" in `assets\style.css` (not even in a comment): the page's safety filter then drops the
   whole style. `tests\test_style.py` checks this.
 - Inspection report downloads offer only "Combined single PDF per truck" (owner's requests: the

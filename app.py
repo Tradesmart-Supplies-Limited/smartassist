@@ -25,7 +25,8 @@ NO_COLUMN = "(none)"
 HERE = os.path.dirname(os.path.abspath(__file__))
 ERROR_LOG = os.path.join(HERE, "output", "error_log.txt")
 
-st.set_page_config(page_title="DocuLoop", page_icon=":material/local_shipping:", layout="wide")
+# The browser-tab icon: a truck in the Tradesmart logo's blue and green (assets/favicon.png).
+st.set_page_config(page_title="DocuLoop", page_icon=os.path.join(HERE, "assets", "favicon.png"), layout="wide")
 ui.apply_style()
 
 # The opening screen with the beating logo, once per visit (not on every click).
