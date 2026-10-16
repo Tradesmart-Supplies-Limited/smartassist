@@ -160,6 +160,11 @@ Things learned while building:
 - Status is always icon + word (`ui.STATUS`), never colour alone. Max content width 1320 px, no page
   scrolling sideways at 1366 px.
 - UI changes must never change logic, figures, widget keys or callbacks.
+- The Generate PDFs button (key `generate_pdfs`) uses the logo's cerulean #4CA8DC (`ui.COLORS["cerulean"]`,
+  the one colour kept outside config.toml) with dark text (5.8:1). Do NOT put it in the theme's blueColor:
+  that also colours the info boxes' text, which then fails contrast (3.7:1).
+- Never write "<" in `assets\style.css` (not even in a comment): the page's safety filter then drops the
+  whole style. `tests\test_style.py` checks this.
 - Inspection report downloads offer only "Combined single PDF per truck" (owner's requests: the
   separate-files option was removed 2026-10-14, "Documents only" 2026-10-16). No choice is shown.
 

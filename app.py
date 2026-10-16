@@ -479,7 +479,7 @@ with tiles:
 with st.container(border=True):
     step4 = st.empty()
     ui.step_header(step4, 4, "Generate")
-    if st.button("Generate PDFs", type="primary", disabled=not jobs, width="stretch",
+    if st.button("Generate PDFs", type="primary", disabled=not jobs, width="stretch", key="generate_pdfs",
                  icon=":material/picture_as_pdf:"):
         bar = st.progress(0.0, text="Starting...")
         files = []

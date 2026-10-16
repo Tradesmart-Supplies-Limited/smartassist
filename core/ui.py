@@ -31,6 +31,7 @@ COLORS = {
     "orange": THEME.get("orangeColor", "#985800"),
     "red": THEME.get("redColor", "#B42318"),
     "gray": THEME.get("grayColor", "#5A6676"),
+    "cerulean": "#4CA8DC",      # the Tradesmart logo's blue, for the Generate button only (see config.toml)
 }
 
 # The truck states in the check table: icon + word, never colour alone.

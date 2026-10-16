@@ -64,6 +64,14 @@
   .dl-splash { animation-delay: 0.6s; }
 }
 
+/* The Generate PDFs button in the logo's cerulean blue, with dark text so it stays easy to read.
+   (st-key-generate_pdfs is the class Streamlit gives the element with key generate_pdfs.)
+   Never write a less-than sign in this file: the page would drop the whole style. */
+.st-key-generate_pdfs button:not(:disabled) { background: var(--dl-cerulean); border-color: var(--dl-cerulean); }
+.st-key-generate_pdfs button:not(:disabled):hover { filter: brightness(0.93); }
+.st-key-generate_pdfs button:not(:disabled) p,
+.st-key-generate_pdfs button:not(:disabled) span { color: var(--dl-text); font-weight: 600; }
+
 /* Numbered step titles */
 .dl-step { display: flex; align-items: center; gap: 10px; margin: 0 0 2px 0; }
 .dl-step .dl-num {
