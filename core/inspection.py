@@ -17,7 +17,9 @@ except ImportError:          # older installs call the package "fitz"
 # What the manager can choose to download.
 MODE_DOCUMENTS = "Documents only"
 MODE_COMBINED = "Combined single PDF per truck (documents then report)"
-MODES = [MODE_DOCUMENTS, MODE_COMBINED]
+# What the manager can download (owner's request, 2026-10-16: only the combined PDF is offered).
+# MODE_DOCUMENTS stays for trucks without a report, which still get their documents.
+MODES = [MODE_COMBINED]
 
 
 def _key(text):

@@ -605,10 +605,10 @@ with st.container(border=True):
     if not report:
         pass                              # no report: the app works exactly as before
     elif not results:
-        include = st.radio("What to include", insp.MODES, key="inspection_mode")
         st.info("Click 'Generate PDFs' above to get the downloads with the inspection report.", icon=":material/info:")
     else:
-        include = st.radio("What to include", insp.MODES, key="inspection_mode")
+        include = insp.MODE_COMBINED          # the only download offered with the inspection report
+        st.caption(f"You get: {include}.")
         with st.spinner("Preparing the ZIP..."):
             batch = zip_for(results["files"], results["jobs"],
                             {values["invoice_no"]: report for _name, values in results["jobs"]}, include,

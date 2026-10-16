@@ -70,9 +70,9 @@ The inspection report is the same for every truck, so you upload it **once**:
    restarting DocuLoop.
 2. Only when the client sends a new report: open **Replace it** and upload the new one.
    **Remove it** stops adding a report.
-3. After **Generate PDFs**, choose **What to include**: documents only, or one combined PDF per truck
-   (the 3 pages, then the report). **Download ZIP** gives one folder per truck; **Download per truck**
-   offers each truck's documents or combined PDF.
+3. After **Generate PDFs** you get one **combined PDF per truck** (the 3 pages, then the report).
+   **Download ZIP** gives one folder per truck; **Download per truck** offers each truck's
+   documents or combined PDF.
 The report itself is never changed: its pages are copied as they are.
 
 ## DRC clearance agent

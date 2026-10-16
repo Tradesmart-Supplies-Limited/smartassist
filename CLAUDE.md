@@ -160,8 +160,8 @@ Things learned while building:
 - Status is always icon + word (`ui.STATUS`), never colour alone. Max content width 1320 px, no page
   scrolling sideways at 1366 px.
 - UI changes must never change logic, figures, widget keys or callbacks.
-- Inspection report downloads offer only "Documents only" and "Combined single PDF per truck"
-  (the separate-files option was removed on the owner's request, 2026-10-14).
+- Inspection report downloads offer only "Combined single PDF per truck" (owner's requests: the
+  separate-files option was removed 2026-10-14, "Documents only" 2026-10-16). No choice is shown.
 
 ## Streamlit notes
 - No `use_container_width`. Keep results in `st.session_state`. Every download button needs a unique key.

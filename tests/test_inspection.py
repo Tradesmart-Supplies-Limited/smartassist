@@ -103,4 +103,4 @@ def test_zip_folders_and_names_for_each_mode(template):
     assert names(insp.MODE_DOCUMENTS) == ["XX-TEST-288/XX-TEST-288.pdf", "XX-TEST-289/XX-TEST-289.pdf"]
     assert names(insp.MODE_COMBINED) == ["XX-TEST-288/XX-TEST-288_with_inspection.pdf",
                                          "XX-TEST-289/XX-TEST-289.pdf"]
-    assert insp.MODES == [insp.MODE_DOCUMENTS, insp.MODE_COMBINED]
+    assert insp.MODES == [insp.MODE_COMBINED]          # "Documents only" is no longer offered
