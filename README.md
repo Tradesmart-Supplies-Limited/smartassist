@@ -21,6 +21,9 @@ Keep the black window open while you work. Close it when you have finished.
 4. Start the app: `streamlit run app.py`
 5. Open the address it shows (e.g. `http://localhost:8501`). Press **Ctrl+C** in the terminal to stop.
 
+Starting from VS Code? Run `.venv\Scripts\python brand_streamlit.py` once (and again after
+reinstalling), so the browser tab shows DocuLoop's truck icon from the first moment.
+
 Skip step 3 and `streamlit run app.py` uses the wrong Python and shows "No module named 'fontTools'".
 If step 3 says "running scripts is disabled", use this instead of steps 3-4:
 `.venv\Scripts\python -m streamlit run app.py`

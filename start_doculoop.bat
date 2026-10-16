@@ -13,6 +13,9 @@ if not exist ".venv\Scripts\python.exe" (
 echo Starting DocuLoop... the browser opens in a few seconds.
 echo Keep this window open while you work. Close it to stop DocuLoop.
 
+rem Show DocuLoop's truck icon and title from the first moment the page opens.
+".venv\Scripts\python.exe" brand_streamlit.py
+
 rem Use port 8501, or the next free one if another program already uses it.
 set PORT=8501
 :find_port

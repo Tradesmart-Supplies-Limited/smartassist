@@ -187,6 +187,10 @@ Things learned while building:
 
 ## Scope and privacy
 - Work only in the project folder. `samples\` is read-only. Do not touch `.venv\`.
+  One exception (owner's OK, 2026-10-16): `brand_streamlit.py`, run by `start_doculoop.bat` at every start,
+  replaces Streamlit's `static\favicon.png` with `assets\favicon.png` and the `<title>` in `static\index.html`
+  with "DocuLoop", so the truck icon shows from the first moment. Originals are kept as
+  `*.streamlit-original` next to them. Nothing else in `.venv\` may be changed.
 - `samples\` and `output\` are git-ignored. Real driver names, passports and phone numbers must never
   appear in committed files or tests.
   Exception (owner's decision, 2026-10-14): the two clearance agents' names and numbers in
