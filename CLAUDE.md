@@ -38,6 +38,8 @@ of this format is accepted as the sample, not only YS-BMS10-288. At load time:
 - a value repeated in several spots must be the same everywhere, and the 3 page titles must be there;
 - otherwise show a clear "does not match" error listing what is wrong.
 The "sample shows X MT / Y packages" notice reads those figures from the uploaded sample.
+The owner replaced samples\YS-BMS10-288.pdf with an improved version on 2026-10-16 (850 KB; output
+about 211 KB per truck, still under 300 KB); it passes every check and is the regression sample now.
 Checked on YS-BMS10-288 to 293: all accepted, each rebuilds its own truck with identical text, and an
 invented truck gives the same text whichever of them is the sample.
 
