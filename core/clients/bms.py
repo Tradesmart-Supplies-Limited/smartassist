@@ -148,6 +148,11 @@ AGENTS = {
 # The manager can switch to the Excel's own tonnage or to fixed figures in Step 3.
 CLIENT_TONNAGE = Decimal("40")
 
+# Owner's rule (2026-10-16): BMS figures NEVER change. Every truck is printed at 40.00 MT and 40 packages,
+# whatever the Excel says, and the app offers no other choice for BMS.
+FIXED_TONNAGE = Decimal("40")
+FIXED_PACKAGES = Decimal("40")
+
 # The shape each value must have in an uploaded sample (regular expressions, whole text).
 MONEY = r"\$[\d,]+\.\d{2}"
 NUMBER = r"\d+(\.\d+)?"

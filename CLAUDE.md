@@ -70,11 +70,11 @@ Things learned while building:
   in the UI (owner's request, 2026-10-14); the other three keep their defaults and, since the
   Instructions box was removed (2026-10-15), can only be changed in `core\clients\bms.py`.
 - Amount = quantity x price with `Decimal`, `ROUND_HALF_UP`. Total = sum of the four amounts.
-- Quantities (changed on the owner's request, 2026-10-14): the default is this client's rule,
-  `bms.CLIENT_TONNAGE` = 40 MT for every truck with packages from the Excel; an unreadable Excel
-  tonnage is then not an error. A switch offers "From the Excel" (tonnage parsed from "42T") and
-  fixed figures for every truck. A notice shows where the sample's figures differ from the Excel's
-  figures that are actually used, for the same invoice no.
+- Quantities, BMS (owner's rule, 2026-10-16): figures NEVER change. Every BMS truck is 40.00 MT and
+  40 packages (`bms.FIXED_TONNAGE`, `bms.FIXED_PACKAGES`); the app shows no quantity choice for BMS and
+  does not read the Excel's tonnage or packages. GCK (FIXED_* = None) keeps the radio with all three
+  choices, defaulting to "From the Excel". The sample-vs-Excel notice only appears for figures read
+  from the Excel.
 - Date format "12-Oct-26", English month names typed in code (no locale). Default today, editable.
 - NEVER use an AI model to produce a document value. Everything is copied or calculated. No network calls.
 - Validation: empty invoice no./driver/horse, unreadable tonnage, duplicate invoice no. = error (truck
@@ -183,7 +183,7 @@ Things learned while building:
 - Only make changes that were asked for. Plain, readable code with short comments (the owner is a beginner).
 
 ## Stop and ask before
-- Deleting any file, adding a dependency, changing a price / amount formula / the 40 MT client quantity
+- Deleting any file, adding a dependency, changing a price / amount formula / the fixed BMS 40 MT / 40 packages
   rule, or touching anything outside the project folder.
 
 ## Acceptance

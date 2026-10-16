@@ -56,9 +56,8 @@ the PDF box (or the other way round), it tells you which box to use.
    - Wording of the two freight lines.
    - Coal price in USD per MT (70 unless you change it). The other prices are fixed and not shown:
      freight line 1 88, freight line 2 140, insurance 2.
-   - Quantities: by default every truck is printed at **40 MT**, with the number of packages from
-     the Excel (this client's rule). You can switch to "From the Excel" (each truck's own tonnage
-     and packages) or "Fixed figures for every truck" (the same tonnage and packages for all).
+   - Quantities: for **BMS** every truck is always **40.00 MT and 40 packages**; there is nothing
+     to choose. For **GCK** you choose where the tonnage and packages come from.
    - **Read the data check table.** "OK" trucks are ready. "Warning" trucks are made, but look at
      the reason. "SKIPPED" trucks get no PDF: correct the Excel and upload it again.
 4. **Generate.** Click "Generate PDFs". Then download everything as one ZIP, or one truck at a
@@ -88,8 +87,7 @@ shows which agent each truck will get. To change an agent, edit `AGENTS` in `cor
 ## How the figures are worked out
 - Amount = quantity x price, rounded to cents. Total = the sum of the four amounts.
 - Example for 42 MT: 2,940.00 + 3,696.00 + 5,880.00 + 84.00 = 12,600.00.
-- By default the tonnage is 40 MT for every truck. With "From the Excel", "42T" in the Excel
-  becomes 42.00 MT on the invoice and 42MT on the packing list.
+- BMS: every truck is 40.00 MT and 40 packages (40MT on the packing list), whatever the Excel says.
 - An empty or "N/A" second trailer is written as NIL.
 
 ## What stops a truck (errors)

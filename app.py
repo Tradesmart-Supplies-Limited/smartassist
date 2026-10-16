@@ -305,7 +305,7 @@ DEFAULTS = {
     ins.KEY_DATE: date.today(),
     ins.KEY_LABELS["freight_1"]: client.DEFAULT_FREIGHT1,
     ins.KEY_LABELS["freight_2"]: client.DEFAULT_FREIGHT2,
-    ins.KEY_SOURCE: ins.SOURCE_CLIENT,
+    ins.KEY_SOURCE: ins.SOURCE_CLIENT if client.CLIENT_TONNAGE is not None else ins.SOURCE_EXCEL,
     ins.KEY_TONNAGE: 40.0,
     ins.KEY_PACKAGES: 40,
 }
@@ -342,15 +342,23 @@ with step3_card:
         prices[name] = Decimal(f"{typed_price:.2f}")
 
     st.markdown("##### :material/scale: Quantities")
-    source = st.radio("Where do the tonnage and number of packages come from?",
-                      [ins.SOURCE_CLIENT, ins.SOURCE_EXCEL, ins.SOURCE_FIXED], key=ins.KEY_SOURCE)
-    tonnage_from_excel = source == ins.SOURCE_EXCEL
-    packages_from_excel = source in (ins.SOURCE_EXCEL, ins.SOURCE_CLIENT)
-    fixed_tonnage = client.CLIENT_TONNAGE if source == ins.SOURCE_CLIENT else None
-    fixed_packages = None
-    if source == ins.SOURCE_CLIENT:
-        st.caption(f"Every {client.NAME} truck is printed at {client.CLIENT_TONNAGE} MT; "
-                   "the Excel's tonnage column is not used.")
+    if client.FIXED_TONNAGE is not None:
+        # This client's figures never change (BMS: 40.00 MT and 40 packages), so there is no choice.
+        source = "fixed for this client"
+        tonnage_from_excel = packages_from_excel = False
+        fixed_tonnage, fixed_packages = client.FIXED_TONNAGE, client.FIXED_PACKAGES
+        st.caption(f"Every {client.NAME} truck: {two_decimals(fixed_tonnage)} MT and {fixed_packages} packages "
+                   "(always the same; the Excel's tonnage and packages columns are not used).")
+    else:
+        source = st.radio("Where do the tonnage and number of packages come from?",
+                          [ins.SOURCE_CLIENT, ins.SOURCE_EXCEL, ins.SOURCE_FIXED], key=ins.KEY_SOURCE)
+        tonnage_from_excel = source == ins.SOURCE_EXCEL
+        packages_from_excel = source in (ins.SOURCE_EXCEL, ins.SOURCE_CLIENT)
+        fixed_tonnage = client.CLIENT_TONNAGE if source == ins.SOURCE_CLIENT else None
+        fixed_packages = None
+        if source == ins.SOURCE_CLIENT:
+            st.caption(f"Every {client.NAME} truck is printed at {client.CLIENT_TONNAGE} MT; "
+                       "the Excel's tonnage column is not used.")
     if source == ins.SOURCE_FIXED:
         f1, f2, _ = st.columns(3)
         fixed_tonnage = Decimal(f"{f1.number_input('Tonnage (MT) for every truck', min_value=0.01, step=0.5, format='%.2f', key=ins.KEY_TONNAGE):.2f}")
