@@ -45,10 +45,8 @@ FIELDS = {
 }
 OPTIONAL = {"trailer2"}
 
-# ---- the typed-instruction assistant: what it may change for this client ----
+# The invoice lines this client has (each with its own price).
 PRICE_ITEMS = ["coal", "freight_1", "freight_2", "insurance"]
-FREIGHT_LINES = ["freight_1", "freight_2"]
-EXAMPLES = ["Coal price is 75"]
 
 # Names of the 3 pages, in order (used for the preview tabs).
 PAGE_NAMES = ["Manifest", "Invoice", "Packing list"]

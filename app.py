@@ -13,7 +13,7 @@ import pandas as pd
 import streamlit as st
 
 from core import inspection as insp
-from core import instructions as ins
+from core import settings
 from core import ui
 from core.clients import detect_client_from_excel, detect_client_from_pdf, get_client, list_clients, pairing_problem
 from core.excel_reader import clean_sheet, detect_header_row, read_raw_sheets
@@ -63,8 +63,8 @@ CLIENT_IDS = [c.ID for c in list_clients()]
 st.session_state.setdefault("active_client", CLIENT_IDS[0])
 st.session_state.setdefault("client", st.session_state.active_client)
 hero_slot = ui.header(get_client(st.session_state.active_client).NAME)
-SETTING_KEYS = [ins.KEY_DATE, ins.KEY_SOURCE, ins.KEY_TONNAGE, ins.KEY_PACKAGES, *ins.KEY_LABELS.values(),
-                *ins.KEY_PRICES.values()]
+SETTING_KEYS = [settings.KEY_DATE, settings.KEY_SOURCE, settings.KEY_TONNAGE, settings.KEY_PACKAGES, *settings.KEY_LABELS.values(),
+                *settings.KEY_PRICES.values()]
 
 
 def switch_client(new_id):
@@ -72,7 +72,7 @@ def switch_client(new_id):
     st.session_state.active_client = new_id
     st.session_state.client = new_id
     for key in ["template", "template_error", "pdf_id", "results", "xl_id", "pending", "reports",
-                "client_switch_pending", ins.KEY_EXCLUDED, ins.KEY_ONLY, ins.KEY_ACTIVE, *SETTING_KEYS]:
+                "client_switch_pending", *SETTING_KEYS]:
         st.session_state.pop(key, None)
     st.session_state.upload_round = st.session_state.get("upload_round", 0) + 1   # empties the upload boxes
 
@@ -279,7 +279,7 @@ with step3_card:
     step3 = st.empty()
     ui.step_header(step3, 3, "Job details")
 
-    # Trucks are read here already, so that typed orders can find them.
+    # Trucks are read here already, so Step 3 can stop early when the Excel has none.
     trucks = read_trucks(table, mapping, int(header_row))
     if not trucks:
         st.warning("No trucks were found in this sheet. Check the title row and the column matching.",
@@ -293,26 +293,26 @@ def serial_no(truck):
     return cell_text(table.iloc[truck.row - int(header_row) - 2][sn_column]) if sn_column else ""
 
 
-# A different Excel (or sheet, or title row) means earlier truck orders no longer apply.
+# A different Excel (or sheet, or title row) means the agent choices and saved report links no longer apply.
 xl_id = (xl_file.name, xl_file.size, sheet_name, int(header_row))
 if st.session_state.get("xl_id") != xl_id:
     st.session_state.xl_id = xl_id
-    for key in (ins.KEY_EXCLUDED, ins.KEY_ONLY, ins.KEY_ACTIVE, "pending", "reports"):
+    for key in ("pending", "reports"):
         st.session_state.pop(key, None)
 
-# Every Step 3 setting has a key, so an applied order can change it. These are the defaults.
+# Every Step 3 setting has a session_state key. These are the defaults.
 DEFAULTS = {
-    ins.KEY_DATE: date.today(),
-    ins.KEY_LABELS["freight_1"]: client.DEFAULT_FREIGHT1,
-    ins.KEY_LABELS["freight_2"]: client.DEFAULT_FREIGHT2,
-    ins.KEY_SOURCE: ins.SOURCE_CLIENT if client.CLIENT_TONNAGE is not None else ins.SOURCE_EXCEL,
-    ins.KEY_TONNAGE: 40.0,
-    ins.KEY_PACKAGES: 40,
+    settings.KEY_DATE: date.today(),
+    settings.KEY_LABELS["freight_1"]: client.DEFAULT_FREIGHT1,
+    settings.KEY_LABELS["freight_2"]: client.DEFAULT_FREIGHT2,
+    settings.KEY_SOURCE: settings.SOURCE_CLIENT if client.CLIENT_TONNAGE is not None else settings.SOURCE_EXCEL,
+    settings.KEY_TONNAGE: 40.0,
+    settings.KEY_PACKAGES: 40,
 }
 ALL_PRICE_NAMES = {"coal": "coal", "freight_1": "freight1", "freight_2": "freight2", "insurance": "insurance"}
 PRICE_NAMES = {item: ALL_PRICE_NAMES[item] for item in client.PRICE_ITEMS}     # this client's invoice lines
 for item, name in PRICE_NAMES.items():
-    DEFAULTS[ins.KEY_PRICES[item]] = float(client.DEFAULT_PRICES[name])
+    DEFAULTS[settings.KEY_PRICES[item]] = float(client.DEFAULT_PRICES[name])
 for key, value in DEFAULTS.items():
     st.session_state.setdefault(key, value)
 
@@ -324,22 +324,22 @@ def md(text):
 with step3_card:
     st.markdown("##### :material/event: Date and freight wording")
     c1, c2, c3 = st.columns(3)
-    doc_date = c1.date_input("Date on the documents", format="DD/MM/YYYY", key=ins.KEY_DATE)
+    doc_date = c1.date_input("Date on the documents", format="DD/MM/YYYY", key=settings.KEY_DATE)
     date_text = format_date(doc_date)
     c1.caption(f"Will be written as {date_text}")
-    freight1 = c2.text_input("Freight line 1 wording", key=ins.KEY_LABELS["freight_1"]).strip()
-    freight2 = c3.text_input("Freight line 2 wording", key=ins.KEY_LABELS["freight_2"]).strip()
+    freight1 = c2.text_input("Freight line 1 wording", key=settings.KEY_LABELS["freight_1"]).strip()
+    freight2 = c3.text_input("Freight line 2 wording", key=settings.KEY_LABELS["freight_2"]).strip()
 
     st.markdown("##### :material/payments: Coal price (USD per MT)")
     prices = {}
     coal_column, _ = st.columns([1, 3])
     for item, name in PRICE_NAMES.items():
         if item == "coal":
-            typed_price = coal_column.number_input(ins.ITEM_NAMES[item], min_value=0.0, step=1.0, format="%.2f",
-                                                   key=ins.KEY_PRICES[item])
+            typed_price = coal_column.number_input(settings.ITEM_NAMES[item], min_value=0.0, step=1.0, format="%.2f",
+                                                   key=settings.KEY_PRICES[item])
         else:
-            # Not shown to the manager: the default price, or one changed by a typed instruction.
-            typed_price = st.session_state[ins.KEY_PRICES[item]]
+            # Not shown to the manager: the default price from the client profile.
+            typed_price = st.session_state[settings.KEY_PRICES[item]]
         prices[name] = Decimal(f"{typed_price:.2f}")
 
     st.markdown("##### :material/scale: Quantities")
@@ -352,32 +352,25 @@ with step3_card:
                    "(always the same; the Excel's tonnage and packages columns are not used).")
     else:
         source = st.radio("Where do the tonnage and number of packages come from?",
-                          [ins.SOURCE_CLIENT, ins.SOURCE_EXCEL, ins.SOURCE_FIXED], key=ins.KEY_SOURCE)
-        tonnage_from_excel = source == ins.SOURCE_EXCEL
-        packages_from_excel = source in (ins.SOURCE_EXCEL, ins.SOURCE_CLIENT)
-        fixed_tonnage = client.CLIENT_TONNAGE if source == ins.SOURCE_CLIENT else None
+                          [settings.SOURCE_CLIENT, settings.SOURCE_EXCEL, settings.SOURCE_FIXED], key=settings.KEY_SOURCE)
+        tonnage_from_excel = source == settings.SOURCE_EXCEL
+        packages_from_excel = source in (settings.SOURCE_EXCEL, settings.SOURCE_CLIENT)
+        fixed_tonnage = client.CLIENT_TONNAGE if source == settings.SOURCE_CLIENT else None
         fixed_packages = None
-        if source == ins.SOURCE_CLIENT:
+        if source == settings.SOURCE_CLIENT:
             st.caption(f"Every {client.NAME} truck is printed at {client.CLIENT_TONNAGE} MT; "
                        "the Excel's tonnage column is not used.")
-    if source == ins.SOURCE_FIXED:
+    if source == settings.SOURCE_FIXED:
         f1, f2, _ = st.columns(3)
-        fixed_tonnage = Decimal(f"{f1.number_input('Tonnage (MT) for every truck', min_value=0.01, step=0.5, format='%.2f', key=ins.KEY_TONNAGE):.2f}")
+        fixed_tonnage = Decimal(f"{f1.number_input('Tonnage (MT) for every truck', min_value=0.01, step=0.5, format='%.2f', key=settings.KEY_TONNAGE):.2f}")
         fixed_packages = Decimal(int(f2.number_input("Packages for every truck", min_value=1, step=1,
-                                                     key=ins.KEY_PACKAGES)))
+                                                     key=settings.KEY_PACKAGES)))
     ui.progress(progress_slot, 3, hero_slot)
     ui.step_header(step3, 3, "Job details", done=True,
                    summary=f"Date {date_text} · coal ${prices['coal']} · {source.split(' (')[0]}")
 
 # ---------------- Data check ----------------
 check_trucks(trucks, figures_from_excel=packages_from_excel, tonnage_from_excel=tonnage_from_excel)
-excluded_rows = set(st.session_state.get(ins.KEY_EXCLUDED, []))
-only_rows = st.session_state.get(ins.KEY_ONLY)
-
-
-def left_out(truck):
-    return truck.row in excluded_rows or bool(only_rows and truck.row not in only_rows)
-
 
 with st.container(border=True):
     st.markdown("### :material/fact_check: Data check")
@@ -388,7 +381,7 @@ with st.container(border=True):
     CHOOSE = "(choose the agent)"
     confirmed_agents = {}
     unknown_borders = sorted({t.border for t in trucks
-                              if client.AGENTS and not t.errors and not left_out(t)
+                              if client.AGENTS and not t.errors
                               and agent_for_border(t.border, client) is None})
     if unknown_borders:
         with st.container(border=True):
@@ -408,9 +401,7 @@ with st.container(border=True):
         packages = truck.packages if packages_from_excel else fixed_packages
         total = ""
         agent = agent_for_border(truck.border, client) or confirmed_agents.get(truck.border)
-        if left_out(truck):
-            status = "Excluded by instruction"
-        elif truck.errors:
+        if truck.errors:
             status = "SKIPPED: " + "; ".join(truck.errors)
         elif client.AGENTS and agent is None:
             status = "WAITING: confirm the clearance agent above"
@@ -442,10 +433,9 @@ with st.container(border=True):
 
     skipped = sum(s.startswith("SKIPPED") for s in statuses)
     warned = sum(s.startswith("Warning") for s in statuses)
-    excluded = statuses.count("Excluded by instruction")
     waiting = sum(s.startswith("WAITING") for s in statuses)
     st.write(f"**{len(jobs)} trucks ready**, {warned} with warnings, {skipped} skipped because of errors, "
-             f"{excluded} excluded by instruction, {waiting} waiting for the clearance agent.")
+             f"{waiting} waiting for the clearance agent.")
 
     # Errors and warnings as one compact list (icon + word, never colour alone).
     issues = [(row, s) for row, s in zip(rows, statuses) if s != "OK"]
@@ -509,7 +499,7 @@ with st.container(border=True):
         if results["jobs"] != jobs:
             st.warning("The data or settings changed after these PDFs were made. "
                        "Click 'Generate PDFs' again to update them.", icon=":material/warning:")
-        st.success(f"{client.NAME}: {len(files)} PDFs ready, 3 pages each · {skipped} skipped · {excluded} excluded · "
+        st.success(f"{client.NAME}: {len(files)} PDFs ready, 3 pages each · {skipped} skipped · "
                    f"{waiting} waiting", icon=":material/task_alt:")
         st.download_button("Download everything (ZIP)", results["zip"],
                            file_name=f"DocuLoop_{client.NAME}_{results['date']}.zip", mime="application/zip",

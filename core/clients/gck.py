@@ -43,10 +43,8 @@ FIELDS = {
 }
 OPTIONAL = {"trailer2"}
 
-# ---- what the (currently hidden) instruction assistant may change ----
+# The invoice lines this client has (each with its own price).
 PRICE_ITEMS = ["coal", "freight_1", "freight_2"]       # no insurance line for GCK
-FREIGHT_LINES = ["freight_1", "freight_2"]
-EXAMPLES = ["Coal price is 40"]
 
 PAGE_NAMES = ["Manifest", "Invoice", "Packing list"]
 PAGES = 3   # pages 4-6 of the sample (the inspection report) are never copied

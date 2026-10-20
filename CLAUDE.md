@@ -84,7 +84,7 @@ Things learned while building:
 
 ## Clients (since 2026-10-15, branch multi-client)
 - `core\clients\bms.py` is the BMS profile: id, name, READY, PDF and Excel fingerprints, Excel FIELDS /
-  OPTIONAL, PRICE_ITEMS / FREIGHT_LINES / EXAMPLES for the assistant, PAGE_NAMES, and the fields table,
+  OPTIONAL, PRICE_ITEMS (the client's invoice lines), PAGE_NAMES, and the fields table,
   formats, agents, client tonnage and default prices that used to be `core\layout.py`.
 - GCK RULE (owner, 2026-10-15): what GCK's Excel and sample give is what is kept. Tonnage exactly as
   the Excel says (42 stays 42, 43 stays 43; no 40 MT rule, `CLIENT_TONNAGE = None`, default quantity
@@ -106,7 +106,7 @@ Things learned while building:
   settings (asks first if PDFs exist). A file recognised as another client blocks building until the
   manager switches or ticks the confirm box. GCK shows "not set up yet" and stops.
 - Names carry the client: `BMS_<invoice>.pdf`, `DocuLoop_BMS_<date>.zip`, combined
-  `BMS_<invoice>_with_inspection.pdf`; the instruction log has a "client" column; the inspection report is
+  `BMS_<invoice>_with_inspection.pdf`; the inspection report is
   kept per client as `output\inspection_report_BMS.pdf` (the older `output\inspection_report.pdf` is
   still used for BMS if present).
 - Uploads: file type is read from the first bytes, never the name; an Excel in the PDF box (or a PDF in
@@ -115,31 +115,14 @@ Things learned while building:
 - BMS regression: `tests\test_bms_regression.py` compares every word and position of 4 invented trucks
   with `tests\bms_reference.json`, made with the code before the change.
 
-## Typed instructions (REMOVED from the screen on 2026-10-15, owner's request)
-- The Instructions box, its example chips, Apply/Discard and the "Active changes" panel were removed
-  from `app.py`. The code below (`core\instructions.py`, `core\llm.py`, tests, benchmark) is kept so the
-  box can be brought back. Without it, the hidden freight 1 / freight 2 / insurance prices can only be
-  changed in `core\clients\bms.py`. The header ticker no longer shows it.
-- What follows describes the assistant as it was built.
-- Files: `core\instructions.py` (schema, prompt, validation, truck/date lookup, limits, apply, log),
-  `core\llm.py` (Ollama client; `OLLAMA_URL` and `MODEL` live only there), the box in `app.py`.
-- Hard rules: orders change Step 3 settings and truck selection only, never a figure inside a document
-  and never a figure for one truck. Nothing changes before Apply. The page must work without Ollama.
-  No new dependencies (urllib only). Never install Ollama or download models without asking.
-- Flat JSON schema sent as `format` to `/api/chat` (temperature 0, num_ctx 4096, num_predict 600,
-  keep_alive 2m, timeout 120 s). Default model `llama3.2:3b`; never qwen2.5:3b (licence).
-- Code, not the model, finds trucks (invoice no., invoice ending, S/N, horse, driver; unique only;
-  ranges on S/N), reads dates (English month table), and checks limits.
-- Typed-words check: every action needs its own words in the typed order, and every truck, number,
-  date and wording must appear in it. This is what keeps unsupported orders from being applied.
-- S/N is read in `app.py` (S/N column) and passed in truck refs; `core\trucks.py` is unchanged.
-- Settings use session_state keys from `core\instructions.py`; Apply/Discard/Clear are on_click callbacks.
-- Log: `output\instructions_log.csv` (git-ignored).
-- Tests: `tests\test_instructions.py`, `tests\test_llm.py` (no Ollama), 25 cases in
-  `tests\instruction_cases.json`. Never edit the cases to make the model pass.
-- Benchmark (needs Ollama): `.venv\Scripts\python tests\benchmark_instructions.py`.
-  On 2026-10-14: 24/25 right, 5/5 unsupported not applied, about 7 s per order (first 15-30 s).
-  Known miss: "Only do <invoice>" is read as exclude by the model and refused by code.
+## Typed instructions (REMOVED, owner's requests 2026-10-15 screen, 2026-10-20 code)
+- The Ollama-based Instructions box is gone completely: `core\instructions.py`, `core\llm.py`, their tests,
+  the benchmark and `instruction_cases.json` were deleted on 2026-10-20 (still in git history), together
+  with the "excluded by instruction" truck status and the clients' FREIGHT_LINES / EXAMPLES.
+  DocuLoop uses no AI and no Ollama. The Step 3 session_state key names now live in `core\settings.py`.
+- The hidden freight 1 / freight 2 / insurance prices can only be changed in the client profile.
+- Checked after the removal: BMS (6 trucks) and GCK (18 trucks) from the real samples give PDFs with the
+  same text as before.
 
 ## Inspection report (optional, uploaded once)
 - Owner's request (2026-10-14): ONE inspection report for every truck, uploaded once and kept on disk

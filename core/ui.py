@@ -48,7 +48,6 @@ STATUS = {
     "warning": "⚠️ Warning",
     "waiting": "⏳ Waiting",
     "error": "⛔ Error",
-    "excluded": "➖ Excluded",
 }
 
 
@@ -147,8 +146,6 @@ def step_header(place, number, title, done=False, summary=""):
 
 def status_of(text):
     """Turn the data check's status text into one of the STATUS states."""
-    if text.startswith("Excluded"):
-        return "excluded"
     if text.startswith("SKIPPED"):
         return "error"
     if text.startswith("WAITING"):

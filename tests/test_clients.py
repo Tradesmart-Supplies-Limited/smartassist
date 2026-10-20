@@ -1,15 +1,12 @@
 # Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """Client profiles, recognition from file content, and wrong pairings (invented data only)."""
 import glob
-import json
 import os
-from datetime import date
 
 import pandas as pd
 import pytest
 
 from conftest import make_pretend_sample
-from core import instructions as ins
 from core.clients import bms, detect_client_from_excel, detect_client_from_pdf, gck, get_client, list_clients
 from core.clients import pairing_problem
 from core.pdf_builder import LayoutError, load_template, pymupdf
@@ -148,16 +145,3 @@ def test_gck_pdf_values_match_its_excel():
     sample_page1 = " ".join(pymupdf.open(GCK_PDFS[0])[0].get_text().split())
     agent_line = sample_page1[sample_page1.index("Contact person :"):][:30]
     assert agent_line in pages[0]                                  # agent kept as the sample shows it
-
-
-# ---------- the instruction assistant follows the active client ----------
-
-def test_orders_about_fields_the_client_lacks_are_refused():
-    answer = json.dumps({"actions": [dict(type="set_price", item="coal", price=75, trucks=None, range_from=None,
-                                          range_to=None, date_text=None, line=None, text=None, tonnage=None,
-                                          packages=None)], "unsupported": []})
-    insurance = answer.replace('"coal"', '"insurance"')
-    plan = ins.read_order("insurance price is 75", [], date(2026, 10, 15), lambda *a: insurance, client=gck)
-    assert plan["understood"] == [] and "GCK has no Insurance price" in plan["not_done"][0]
-    plan = ins.read_order("coal price is 75", [], date(2026, 10, 15), lambda *a: answer, client=bms)
-    assert plan["understood"][0]["set"] == {"price_coal": 75.0}
