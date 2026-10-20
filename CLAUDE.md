@@ -6,7 +6,7 @@ and the client's loading-order Excel. For every truck the app writes one 3-page 
 One wrong number can delay an OGEFREM customs declaration, so correctness comes first.
 
 ## Environment
-- Windows, `C:\Projects\DocuLoop` (folder keeps its old name), Python 3.12 in `.venv`, 8 GB RAM, no GPU, no internet at run time.
+- Windows, `C:\Projects\SmartAssist`, Python 3.12 in `.venv`, 8 GB RAM, no GPU, no internet at run time.
 - Allowed packages only: streamlit, pandas, openpyxl, pymupdf, fonttools, pytest. Ask before adding any other.
 - Run the app: `start_smartassist.bat`. Run the tests: `.venv\Scripts\python -m pytest`.
 
