@@ -1,4 +1,4 @@
-# SmartAssist
+# DocuLoop
 
 Local, offline Streamlit app for this company's clients (BMS; GCK prepared, see "Clients"). The manager uploads a sample PDF (the finished look)
 and the client's loading-order Excel. For every truck the app writes one 3-page PDF
@@ -6,9 +6,9 @@ and the client's loading-order Excel. For every truck the app writes one 3-page 
 One wrong number can delay an OGEFREM customs declaration, so correctness comes first.
 
 ## Environment
-- Windows, `C:\Projects\SmartAssist`, Python 3.12 in `.venv`, 8 GB RAM, no GPU, no internet at run time.
+- Windows, `C:\Projects\DocuLoop`, Python 3.12 in `.venv`, 8 GB RAM, no GPU, no internet at run time.
 - Allowed packages only: streamlit, pandas, openpyxl, pymupdf, fonttools, pytest. Ask before adding any other.
-- Run the app: `start_smartassist.bat`. Run the tests: `.venv\Scripts\python -m pytest`.
+- Run the app: `start_doculoop.bat`. Run the tests: `.venv\Scripts\python -m pytest`.
 
 ## Inputs
 - `samples\` (read-only, git-ignored): the sample PDF (e.g. `YS-BMS10-288.pdf`) and the client Excel.
@@ -105,7 +105,7 @@ Things learned while building:
 - App: client radio at the top (session_state only). Switching clears sample, Excel, results and
   settings (asks first if PDFs exist). A file recognised as another client blocks building until the
   manager switches or ticks the confirm box. GCK shows "not set up yet" and stops.
-- Names carry the client: `BMS_<invoice>.pdf`, `SmartAssist_BMS_<date>.zip`, combined
+- Names carry the client: `BMS_<invoice>.pdf`, `DocuLoop_BMS_<date>.zip`, combined
   `BMS_<invoice>_with_inspection.pdf`; the instruction log has a "client" column; the inspection report is
   kept per client as `output\inspection_report_BMS.pdf` (the older `output\inspection_report.pdf` is
   still used for BMS if present).
@@ -208,9 +208,9 @@ Things learned while building:
 
 ## Scope and privacy
 - Work only in the project folder. `samples\` is read-only. Do not touch `.venv\`.
-  One exception (owner's OK, 2026-10-16): `brand_streamlit.py`, run by `start_smartassist.bat` at every start,
+  One exception (owner's OK, 2026-10-16): `brand_streamlit.py`, run by `start_doculoop.bat` at every start,
   replaces Streamlit's `static\favicon.png` with `assets\favicon.png` and the `<title>` in `static\index.html`
-  with "SmartAssist", so the truck icon shows from the first moment. Originals are kept as
+  with "DocuLoop", so the truck icon shows from the first moment. Originals are kept as
   `*.streamlit-original` next to them. Nothing else in `.venv\` may be changed.
 - `samples\` and `output\` are git-ignored. Real driver names, passports and phone numbers must never
   appear in committed files or tests.
@@ -228,4 +228,4 @@ Things learned while building:
 - 60 trucks in under 60 seconds, each PDF exactly 3 pages.
 - Invoice total = sum of its four amounts for 40, 42 and 42.5 MT.
 - No replaced text overflows its cell, including a 30-character driver name.
-- pytest passes, `git status` shows no client data, `start_smartassist.bat` opens the app.
+- pytest passes, `git status` shows no client data, `start_doculoop.bat` opens the app.

@@ -1,5 +1,5 @@
 # Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
-"""Client profile: BMS (Brother Mining SASU, coal from Kitwe). Everything SmartAssist needs to know about
+"""Client profile: BMS (Brother Mining SASU, coal from Kitwe). Everything DocuLoop needs to know about
 this client lives here: how to recognise its files, its Excel columns, where every per-truck value sits
 in its sample PDF, and its default job settings.
 
