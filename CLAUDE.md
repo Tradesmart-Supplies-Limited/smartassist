@@ -196,9 +196,12 @@ Things learned while building:
   #0F172A (config.toml); tints `soft`, `surface`, `line`, `muted`, `green_soft` and the hero gradient end
   `accent2` #1D4ED8 are in `ui.COLORS` (backgrounds/lines only, `muted` 4.8:1 for small text). This replaces
   the v1.6/v1.7 navy header band, ticker, left step stripes and old accent2 described above.
-  `ui.header()` draws the full-width white top bar (brand mark, client/offline/version chips) and returns
-  `hero_slot`; `ui.progress(progress_slot, steps_done, hero_slot)` redraws the blue hero ("Step n" + step
-  name tags) and the "Workflow" card. The client radio's label is "Client selector". Icons from the design
+  `ui.header()` draws the full-width white top bar (Tradesmart logo in a white tile, the name, and the
+  client/offline/version chips) and returns `hero_slot`; `ui.progress(progress_slot, steps_done, hero_slot)`
+  redraws the blue hero ("Step n" + step name tags, name, tagline) and the "Workflow" card.
+  Owner's changes to the design (2026-10-20): no tagline in the top bar, no chips and no logo in the hero
+  (the logo moved to the top bar), and the sample box's hint shows only "PDF" (CSS; the box still accepts
+  Excel files so it can say "use the other box"). The client radio's label is "Client selector". Icons from the design
   are `assets\icons\*.svg`, embedded as data URIs by `ui._icon()`. Upload boxes put the Upload button on the
   right with a bold title from CSS (`.st-key-pdf*`, `.st-key-xl*`, `inspection_upload*`). The design's font is
   Inter, but the app keeps the offline Windows fonts (Segoe UI). The design's System / Dark mode /

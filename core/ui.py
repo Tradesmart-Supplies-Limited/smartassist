@@ -92,8 +92,8 @@ def header(client_name):
     name = html.escape(client_name)
     st.markdown(
         '<div class="dl-topbar"><div class="dl-brand">'
-        f'<span class="dl-mark">{_icon("file-text")}</span>'
-        f'<div><div class="dl-brand-name">{TITLE}</div><div class="dl-brand-sub">{TAGLINE}</div></div></div>'
+        f'<span class="dl-mark">{_logos()}</span>'
+        f'<div class="dl-brand-name">{TITLE}</div></div>'
         '<div class="dl-chips" role="status">'
         f'<span class="dl-chip dl-chip-blue">{_icon("building")} Client: {name}</span>'
         f'<span class="dl-chip dl-chip-green">{_icon("lock")} Offline</span>'
@@ -107,7 +107,7 @@ PROGRESS_STEPS = ["Sample PDF", "Loading-order Excel", "Job details", "Generate"
 
 
 def _hero(place, steps_done):
-    """The blue hero: where the manager is now, the app's name and the same status as the top bar."""
+    """The blue hero: where the manager is now, the app's name and what it makes."""
     name = html.escape(st.session_state.get("_dl_client_name", ""))
     current = [f"{name} sample PDF", f"{name} loading-order Excel", "Job details", "Generate"]
     if steps_done < len(current):
@@ -116,11 +116,7 @@ def _hero(place, steps_done):
         tags = '<span class="dl-tag">✓ All steps done</span>'
     place.markdown(
         f'<div class="dl-hero"><div class="dl-hero-copy"><div class="dl-tags">{tags}</div>'
-        f'<h1>{TITLE}</h1><p>{TAGLINE}</p><div class="dl-tags">'
-        f'<span class="dl-chip">{_icon("file-text-hero")} Client: {name}</span>'
-        f'<span class="dl-chip">{_icon("lock-hero")} Offline</span>'
-        f'<span class="dl-chip">{_icon("info-hero")} {TITLE} v{VERSION}</span>'
-        f'</div></div><div class="dl-logo-tile">{_logos()}</div></div>', unsafe_allow_html=True)
+        f'<h1>{TITLE}</h1><p>{TAGLINE}</p></div></div>', unsafe_allow_html=True)
 
 
 def progress(place, steps_done, hero=None):

@@ -22,13 +22,13 @@
   clip-path: inset(0 -100vmax -1px);
 }
 .dl-brand { display: flex; align-items: center; gap: 16px; }
+/* The Tradesmart logo in a white rounded tile, where the design had its document icon. */
 .dl-mark {
-  display: inline-flex; align-items: center; justify-content: center; flex: none;
-  width: 44px; height: 44px; border-radius: 14px; background: var(--dl-accent);
+  display: inline-flex; align-items: center; justify-content: center; flex: none; overflow: hidden;
+  width: 56px; height: 56px; border-radius: 14px; background: #FFFFFF; border: 1px solid var(--dl-border);
 }
-.dl-mark .dl-icon { width: 22px; height: 22px; }
+.dl-mark .dl-logos { width: 52px; height: auto; }
 .dl-brand-name { font-size: 22px; font-weight: 700; line-height: 28px; color: var(--dl-text); }
-.dl-brand-sub { font-size: 13px; line-height: 18px; color: var(--dl-muted); }
 .dl-chips, .dl-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .dl-chip {
   display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px;
@@ -38,7 +38,7 @@
 .dl-chip-green { background: var(--dl-green-soft); color: var(--dl-green); }
 .dl-chip-gray { background: var(--dl-surface); color: var(--dl-gray); }
 
-/* ---------- Blue hero: current step, the name, the status chips and the logo in a white tile ---------- */
+/* ---------- Blue hero: the current step, the name and what DocuLoop makes ---------- */
 .dl-hero {
   display: flex; align-items: center; gap: 20px; padding: 24px; border-radius: 24px; color: #FFFFFF;
   background: linear-gradient(90deg, var(--dl-accent) 0%, var(--dl-accent2) 100%);
@@ -50,14 +50,8 @@
   padding: 6px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.12);
   font-size: 12px; font-weight: 700; line-height: 16px;
 }
-.dl-hero .dl-chip { background: rgba(255, 255, 255, 0.12); color: #FFFFFF; }
 .dl-hero h1 { color: #FFFFFF; font-size: 32px; line-height: 40px; font-weight: 700; margin: 0; padding: 0; }
 .dl-hero p { color: #FFFFFF; opacity: 0.9; font-size: 15px; line-height: 24px; margin: 0; }
-.dl-logo-tile {
-  display: flex; align-items: center; justify-content: center; flex: none;
-  width: 96px; height: 96px; border-radius: 20px; background: #FFFFFF; overflow: hidden;
-}
-.dl-logos { width: 88px; height: auto; }
 
 /* ---------- Opening screen: the logo beats twice like a heart, then everything fades away (about 2.5 s) ---------- */
 .dl-splash {
@@ -176,6 +170,13 @@
 [class*="st-key-xl_"] [data-testid="stFileUploaderDropzoneInstructions"] > div::before { content: "Upload loading-order Excel"; }
 [class*="st-key-inspection_upload"] [data-testid="stFileUploaderDropzoneInstructions"] > div::before { content: "Upload inspection report"; }
 [data-testid="stFileUploaderDropzoneInstructions"] span { font-size: 13px; line-height: 18px; color: var(--dl-muted); }
+/* The sample box also takes Excel files (only to say "use the other box"), but it shows just PDF. */
+.st-key-pdf [data-testid="stFileUploaderDropzoneInstructions"] span,
+[class*="st-key-pdf_"] [data-testid="stFileUploaderDropzoneInstructions"] span { font-size: 0; }
+.st-key-pdf [data-testid="stFileUploaderDropzoneInstructions"] span::after,
+[class*="st-key-pdf_"] [data-testid="stFileUploaderDropzoneInstructions"] span::after {
+  content: "200MB per file • PDF"; font-size: 13px;
+}
 
 /* Uploaded files show a real file icon: red PDF for .pdf, green Excel for .xlsx / .xlsm / .xls.
    Streamlit puts the file name in the chip's aria-label ("name.pdf, 32.0B"). The two brand colours
