@@ -91,7 +91,8 @@ def header(client_name):
     name = html.escape(client_name)
     st.markdown(
         '<div class="dl-topbar"><div class="dl-brand">'
-        f'<span class="dl-mark">{_logos()}</span>'
+        # Clicking the logo reloads DocuLoop from the start (a fresh page, like the browser's reload button).
+        f'<a class="dl-mark" href="./" target="_self" title="Reload DocuLoop" aria-label="Reload DocuLoop">{_logos()}</a>'
         f'<div class="dl-brand-name">{TITLE}</div></div>'
         '<div class="dl-chips" role="status">'
         f'<span class="dl-chip dl-chip-blue">{_icon("building")} Client: {name}</span>'

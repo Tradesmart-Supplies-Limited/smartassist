@@ -28,6 +28,9 @@
   width: 56px; height: 56px; border-radius: 14px; background: #FFFFFF; border: 1px solid var(--dl-border);
 }
 .dl-mark .dl-logos { width: 52px; height: auto; }
+/* The logo is a reload link: a hand pointer and a light blue ring on hover or keyboard focus. */
+.dl-mark { cursor: pointer; transition: box-shadow 0.15s ease; }
+.dl-mark:hover, .dl-mark:focus-visible { box-shadow: 0 0 0 3px var(--dl-soft), 0 0 0 4px var(--dl-accent); outline: none; }
 .dl-brand-name { font-size: 22px; font-weight: 700; line-height: 28px; color: var(--dl-text); }
 .dl-chips, .dl-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .dl-chip {

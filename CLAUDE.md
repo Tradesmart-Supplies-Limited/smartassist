@@ -196,6 +196,9 @@ Things learned while building:
 - Step 4 has no "Download everything (ZIP)" button any more (owner's request, 2026-10-20): the full ZIP
   comes only from the inspection-report section. "Download one truck at a time" was removed too (same day);
   Step 4 keeps only the preview.
+- The top-bar logo is a reload link (owner's request, 2026-10-20): `<a class="dl-mark" href="./"
+  target="_self">` in `ui.header()`; a click opens a fresh page (new session: uploads, results and client
+  choice are cleared, the splash shows again). Hover/focus ring in style.css.
 
 ## Streamlit notes
 - No `use_container_width`. Keep results in `st.session_state`. Every download button needs a unique key.
