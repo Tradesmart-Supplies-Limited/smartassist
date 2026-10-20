@@ -26,7 +26,7 @@ blueColor = "#1F4E79"
 # The Tradesmart logo's cerulean (#4CA8DC) is used only as the Generate button's background, with dark
 # text on it (5.8:1). It is set in core/ui.py, because Streamlit's own blueColor also colours the info
 # boxes' text, which would then be too light to read.
-font = "Segoe UI, Arial, sans-serif"  # system fonts only, nothing downloaded
-headingFont = "Segoe UI, Arial, sans-serif"
-baseRadius = "8px"
+font = "Segoe UI Variable Text, Segoe UI, Arial, sans-serif"   # Windows 11 system fonts, nothing downloaded
+headingFont = "Segoe UI Variable Display, Segoe UI, Arial, sans-serif"
+baseRadius = "12px"
 showWidgetBorder = true

@@ -11,7 +11,7 @@ import tomllib
 
 import streamlit as st
 
-VERSION = "1.6"
+VERSION = "1.7"
 PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -32,6 +32,7 @@ COLORS = {
     "red": THEME.get("redColor", "#B42318"),
     "gray": THEME.get("grayColor", "#5A6676"),
     "border": THEME.get("borderColor", "#D3DCE6"),
+    "accent2": "#2A6AA3",       # header gradient end: a brighter navy (white text on it 5.7:1)
     "cerulean": "#4CA8DC",      # the Tradesmart logo's blue, for the Generate button only (see config.toml)
 }
 

@@ -185,6 +185,12 @@ Things learned while building:
   tiles' plain container has key `summary_tiles` so it is left out. Step cards get a navy left stripe, green
   when done (`:has(.dl-step.dl-done)`). Upload boxes have a dashed navy outline; Streamlit's Deploy button
   and top decoration are hidden.
+- UI v1.7 "modern" (2026-10-20): Windows 11 fonts (Segoe UI Variable), baseRadius 12px, header gradient
+  accent -> `ui.COLORS["accent2"]` #2A6AA3 (white text 5.7:1), rounder cards, the client radio styled as two
+  equal-height selectable cards (`.st-key-client [data-testid="stRadioGroup"] > div`, selected =
+  `[data-selected="true"]`, whole card clickable via a stretched label), pill-shaped buttons.
+  Note: the in-app test browser's simulated mouse clicks do not trigger Streamlit radios; check switching
+  with the keyboard (focus + ArrowRight) or AppTest `set_value`, which both work.
 - Never write "<" in `assets\style.css` (not even in a comment): the page's safety filter then drops the
   whole style. `tests\test_style.py` checks this.
 - Inspection report downloads offer only "Combined single PDF per truck" (owner's requests: the

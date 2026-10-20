@@ -125,6 +125,44 @@
 /* No developer clutter: Streamlit's Deploy button and coloured top line mean nothing to a manager. */
 [data-testid="stAppDeployButton"], [data-testid="stDecoration"] { display: none; }
 
+/* ---------- Modern look (v1.7): gradient header, rounder cards, client cards, pill buttons ---------- */
+.dl-header { background: linear-gradient(135deg, var(--dl-accent) 0%, var(--dl-accent2) 100%);
+             padding: 18px 22px; }
+.dl-top .dl-header { border-radius: 16px 0 0 16px; }
+.dl-logo-tile { border-radius: 0 16px 16px 0; }
+.dl-header h1 { font-size: 1.85rem; letter-spacing: -0.01em; }
+h3, .dl-step h3 { letter-spacing: -0.005em; }
+
+/* Cards: rounder, lighter border, a soft lift */
+[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:not(.st-key-summary_tiles) {
+  border-radius: 14px; border-color: var(--dl-border);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 2px 8px rgba(16, 24, 40, 0.04);
+}
+
+/* Client choice as two selectable cards */
+.st-key-client [data-testid="stRadioGroup"] { gap: 12px; width: 100%; align-items: stretch; }
+.st-key-client [data-testid="stRadioGroup"] > div {
+  flex: 1 1 260px; padding: 10px 14px; border: 1px solid var(--dl-border); border-radius: 12px;
+  background: var(--dl-card); transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.st-key-client [data-testid="stRadioGroup"] > div:hover { border-color: var(--dl-accent); }
+.st-key-client [data-testid="stRadioGroup"] > div[data-selected="true"] {
+  border-color: var(--dl-accent); box-shadow: 0 0 0 2px var(--dl-accent); background: var(--dl-page);
+}
+.st-key-client [data-testid="stRadioOption"] p { font-weight: 700; font-size: 1.05rem; }
+/* The whole card is clickable: the option's label is stretched over the card (name and description). */
+.st-key-client [data-testid="stRadioGroup"] > div { position: relative; cursor: pointer; }
+.st-key-client [data-testid="stRadioOption"]::after { content: ""; position: absolute; inset: 0; border-radius: 12px; }
+
+/* Pill-shaped buttons, including downloads and Generate */
+[data-testid^="stBaseButton-primary"], [data-testid^="stBaseButton-secondary"] { border-radius: 999px; }
+
+/* Rounder tables, expanders, messages and the progress tracker */
+[data-testid="stDataFrame"] { border-radius: 12px; overflow: hidden; }
+[data-testid="stExpander"] details { border-radius: 12px; }
+[data-testid="stAlert"] { border-radius: 12px; }
+.dl-pstep { border-radius: 12px; }
+
 /* Numbered step titles */
 .dl-step { display: flex; align-items: center; gap: 10px; margin: 0 0 2px 0; }
 .dl-step .dl-num {
