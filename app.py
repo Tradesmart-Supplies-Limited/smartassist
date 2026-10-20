@@ -4,6 +4,7 @@ import hashlib
 import io
 import os
 import re
+import time
 import traceback
 import zipfile
 from datetime import date, datetime
@@ -12,6 +13,7 @@ from decimal import Decimal
 import pandas as pd
 import streamlit as st
 
+from core import auth
 from core import inspection as insp
 from core import instructions as ins
 from core import ui
@@ -58,11 +60,59 @@ def file_kind(data):
     return "other"
 
 
+# ---------------- Login (only once users were added with manage_users.bat) ----------------
+WAIT_AFTER_FAILS = 30          # seconds to wait after 5 wrong passwords in a row
+
+
+def sign_in():
+    """Check the typed name and password (the form's button calls this)."""
+    name = auth.check_login(st.session_state.get("login_name"), st.session_state.get("login_password"))
+    st.session_state.login_password = ""                    # never keep a typed password
+    if name:
+        st.session_state.user = name
+        st.session_state.login_fails = 0
+    else:
+        st.session_state.login_fails = st.session_state.get("login_fails", 0) + 1
+        if st.session_state.login_fails >= 5:
+            st.session_state.login_wait_until = time.time() + WAIT_AFTER_FAILS
+
+
+def sign_out():
+    """Forget everything about this visit: the next person starts from the login screen."""
+    for key in list(st.session_state.keys()):
+        if key != "splash_shown":
+            del st.session_state[key]
+
+
+if auth.login_required():
+    if st.session_state.get("user") not in auth.load_users():
+        st.session_state.pop("user", None)                  # removed users are signed out at their next click
+        ui.login_header()
+        _, middle, _ = st.columns([1, 1.2, 1])
+        with middle, st.container(border=True):
+            st.subheader("Sign in")
+            wait = st.session_state.get("login_wait_until", 0) - time.time()
+            with st.form("login_form"):
+                st.text_input("User name", key="login_name", autocomplete="username")
+                st.text_input("Password", type="password", key="login_password", autocomplete="current-password")
+                st.form_submit_button("Sign in", type="primary", on_click=sign_in, disabled=wait > 0,
+                                      icon=":material/login:", width="stretch")
+            if wait > 0:
+                st.warning(f"Too many wrong passwords. Wait {int(wait) + 1} seconds, then try again.",
+                           icon=":material/timer:")
+            elif st.session_state.get("login_fails"):
+                st.error("Wrong user name or password.", icon=":material/error:")
+            st.caption("Ask the manager if you need an account or a new password.")
+        st.stop()
+
+
 # ---------------- Client choice (remembered in this browser session only) ----------------
 CLIENT_IDS = [c.ID for c in list_clients()]
 st.session_state.setdefault("active_client", CLIENT_IDS[0])
 st.session_state.setdefault("client", st.session_state.active_client)
-hero_slot = ui.header(get_client(st.session_state.active_client).NAME)
+hero_slot = ui.header(get_client(st.session_state.active_client).NAME, st.session_state.get("user"))
+if st.session_state.get("user"):
+    st.button("Sign out", key="sign_out", on_click=sign_out, icon=":material/logout:")
 SETTING_KEYS = [ins.KEY_DATE, ins.KEY_SOURCE, ins.KEY_TONNAGE, ins.KEY_PACKAGES, *ins.KEY_LABELS.values(),
                 *ins.KEY_PRICES.values()]
 
@@ -497,6 +547,10 @@ with st.container(border=True):
         # Keep the results, so they stay on screen after a download click.
         st.session_state.results = {"files": files, "zip": zip_buffer.getvalue(),
                                     "jobs": jobs, "date": date_text, "client": client.ID}
+        try:                                     # who made which PDFs: output/generation_log.csv
+            auth.log_generation(st.session_state.get("user"), client.NAME, [name for name, _ in files])
+        except OSError:
+            log_error("generation log")
 
     results = st.session_state.get("results")
     if not results:

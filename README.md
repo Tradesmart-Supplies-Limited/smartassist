@@ -108,11 +108,39 @@ invoice number used twice.
 ## What only warns
 The same horse used twice; empty passport number; empty exit border.
 
+## Sharing with the team (office network, free)
+DocuLoop can run on one office computer and be used by up to 4 people (the manager and three
+colleagues) from their own computers or phones on the office network. Nothing goes to the internet.
+
+**Once, on the computer that will run DocuLoop:**
+1. Double-click **manage_users.bat**, choose 1 "Add a user" and add each person with a password of at
+   least 8 characters. The passwords are saved scrambled in `private\users.json`, never on GitHub.
+2. Double-click **start_doculoop_network.bat**. It refuses to start until users exist.
+3. The first time, Windows asks whether Python may use the network: choose **Private networks** and
+   **Allow**.
+4. The black window shows the address to give colleagues, for example `http://OFFICE-PC:8501` or
+   `http://192.168.1.20:8501`. They type it in their browser and sign in.
+
+**Every day:** start `start_doculoop_network.bat` on that computer and keep its black window open.
+Closing it (or switching the computer off) stops DocuLoop for everyone.
+
+**Good to know**
+- As soon as users exist, everybody signs in, also on the DocuLoop computer itself.
+- Each person's files and PDFs are separate. The saved inspection report is shared by everyone.
+- `output\generation_log.csv` records who generated which PDFs, and when.
+- To reset a forgotten password or remove someone who left: `manage_users.bat`, choices 2 and 3.
+  A removed person is signed out at their next click.
+- After 5 wrong passwords, the login waits 30 seconds.
+- `start_doculoop.bat` still works as before for this computer only.
+
 ## If something goes wrong
 - **The browser does not open:** look in the black window for the line with `http://localhost:` and
   type that address in the browser's address bar.
 - **Red message at step 1:** the PDF is not the sample this program was built for.
 - **Changed a setting after generating:** click "Generate PDFs" again; a yellow message reminds you.
+- **A colleague cannot open DocuLoop:** check they are on the office network, try the number address
+  (`http://192.168...`) instead of the computer name, and check that Windows allowed Python on
+  Private networks (Windows Security → Firewall → Allow an app through firewall).
 
 ## First-time setup (once, needs internet)
 1. Install Python 3.12 from https://www.python.org/downloads/ and tick "Add python.exe to PATH".

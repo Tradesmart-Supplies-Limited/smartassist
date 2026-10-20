@@ -22,6 +22,13 @@
   clip-path: inset(0 -100vmax -1px);
 }
 .dl-brand { display: flex; align-items: center; gap: 16px; }
+/* With a login: the Sign out button is placed at the right end of the top bar, after the chips. */
+[data-testid="stMainBlockContainer"] { position: relative; }
+.dl-topbar.dl-with-user { padding-right: 12rem; }
+.st-key-sign_out { position: absolute; top: 25px; right: 3rem; width: auto; z-index: 5; }
+.st-key-sign_out button { min-height: 0; padding: 6px 14px; }
+/* The login form sits in its own card already: no second border around the fields. */
+[data-testid="stForm"] { border: none; padding: 0; }
 /* The Tradesmart logo in a white rounded tile, where the design had its document icon. */
 .dl-mark {
   display: inline-flex; align-items: center; justify-content: center; flex: none; overflow: hidden;
@@ -216,3 +223,18 @@
 
 /* Footer */
 .dl-footer { color: var(--dl-gray); text-align: center; font-size: 0.85rem; margin-top: 18px; }
+
+/* ---------- Phones and narrow windows (the office Wi-Fi) ---------- */
+@media (max-width: 700px) {
+  .dl-topbar, .dl-topbar.dl-with-user { padding: 12px 0; gap: 10px; }
+  .dl-topbar .dl-chips { gap: 6px; }
+  .dl-chip { padding: 6px 10px; font-size: 12px; }
+  .st-key-sign_out { top: 22px; right: 1rem; }
+  .dl-hero { padding: 18px; border-radius: 18px; }
+  [data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:not(.st-key-summary_tiles),
+  .dl-panel { padding: 14px; border-radius: 16px; }
+  .dl-pstep { flex-basis: 100%; padding: 12px; }
+  [data-testid="stFileUploaderDropzone"] { flex-wrap: wrap; padding: 14px; }
+  [data-testid="stFileUploaderDropzone"] > span { margin-left: 0; width: 100%; }
+  [data-testid="stFileUploaderDropzone"] > span button { width: 100%; }
+}
