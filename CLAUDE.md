@@ -191,6 +191,18 @@ Things learned while building:
   `[data-selected="true"]`, whole card clickable via a stretched label), pill-shaped buttons.
   Note: the in-app test browser's simulated mouse clicks do not trigger Streamlit radios; check switching
   with the keyboard (focus + ArrowRight) or AppTest `set_value`, which both work.
+- UI v1.8 (2026-10-20, owner's request): the look follows the Figma design "DocuLoop UI"
+  (https://www.figma.com/design/KMTzehAfWLeH1ElOeaEYoC, frame 4:2). Accent #2563EB, page #F7FAFF, text
+  #0F172A (config.toml); tints `soft`, `surface`, `line`, `muted`, `green_soft` and the hero gradient end
+  `accent2` #1D4ED8 are in `ui.COLORS` (backgrounds/lines only, `muted` 4.8:1 for small text). This replaces
+  the v1.6/v1.7 navy header band, ticker, left step stripes and old accent2 described above.
+  `ui.header()` draws the full-width white top bar (brand mark, client/offline/version chips) and returns
+  `hero_slot`; `ui.progress(progress_slot, steps_done, hero_slot)` redraws the blue hero ("Step n" + step
+  name tags) and the "Workflow" card. The client radio's label is "Client selector". Icons from the design
+  are `assets\icons\*.svg`, embedded as data URIs by `ui._icon()`. Upload boxes put the Upload button on the
+  right with a bold title from CSS (`.st-key-pdf*`, `.st-key-xl*`, `inspection_upload*`). The design's font is
+  Inter, but the app keeps the offline Windows fonts (Segoe UI). The design's System / Dark mode /
+  Light mode buttons are NOT built yet.
 - Never write "<" in `assets\style.css` (not even in a comment): the page's safety filter then drops the
   whole style. `tests\test_style.py` checks this.
 - Inspection report downloads offer only "Combined single PDF per truck" (owner's requests: the

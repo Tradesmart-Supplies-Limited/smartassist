@@ -1,58 +1,71 @@
 /* Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde. */
-/* DocuLoop look. Colours come from the --dl-* variables, which core/ui.py fills in
-   from the [theme] block of .streamlit/config.toml. Only stable data-testid selectors are used. */
+/* DocuLoop look (v1.8, from the Figma design "DocuLoop UI", 2026-10-20). Colours come from the --dl-*
+   variables, which core/ui.py fills in from the [theme] block of .streamlit/config.toml.
+   Only stable data-testid selectors are used. Never write a less-than sign in this file:
+   the page would drop the whole style (tests/test_style.py checks this). */
 
 /* Page: a comfortable maximum width, so nothing scrolls sideways at 1366 px. */
 [data-testid="stMainBlockContainer"] {
   max-width: 1320px;
-  padding-top: 1.5rem;
+  padding-top: 0;
   padding-bottom: 2rem;
 }
+.dl-icon { width: 16px; height: 16px; flex: none; }
 
-/* Bordered containers (the cards) sit on white, with a soft shadow. In Streamlit 1.65 a bordered
-   card is the block directly inside a stLayoutWrapper; the summary tiles' plain container is left out. */
-[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:not(.st-key-summary_tiles) {
-  background: var(--dl-card);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+/* ---------- White top bar: name on the left, status chips on the right ----------
+   It spans the whole window: the wide shadow paints the white (and the line under it) beyond the
+   content width without making the page scroll sideways. The right padding leaves room for Streamlit's menu. */
+.dl-topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 14px 3rem 14px 0; margin-bottom: 8px; background: var(--dl-card);
+  box-shadow: 0 0 0 100vmax var(--dl-card), 0 1px 0 100vmax var(--dl-border);
+  clip-path: inset(0 -100vmax -1px);
 }
+.dl-brand { display: flex; align-items: center; gap: 16px; }
+.dl-mark {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 44px; height: 44px; border-radius: 14px; background: var(--dl-accent);
+}
+.dl-mark .dl-icon { width: 22px; height: 22px; }
+.dl-brand-name { font-size: 22px; font-weight: 700; line-height: 28px; color: var(--dl-text); }
+.dl-brand-sub { font-size: 13px; line-height: 18px; color: var(--dl-muted); }
+.dl-chips, .dl-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.dl-chip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px;
+  font-size: 13px; font-weight: 600; line-height: 18px; white-space: nowrap;
+}
+.dl-chip-blue { background: var(--dl-soft); color: var(--dl-accent2); }
+.dl-chip-green { background: var(--dl-green-soft); color: var(--dl-green); }
+.dl-chip-gray { background: var(--dl-surface); color: var(--dl-gray); }
 
-/* Header band */
-.dl-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
-  border-radius: 10px;
-  background: var(--dl-accent);
-  color: #FFFFFF;
+/* ---------- Blue hero: current step, the name, the status chips and the logo in a white tile ---------- */
+.dl-hero {
+  display: flex; align-items: center; gap: 20px; padding: 24px; border-radius: 24px; color: #FFFFFF;
+  background: linear-gradient(90deg, var(--dl-accent) 0%, var(--dl-accent2) 100%);
+  box-shadow: 0 12px 16px rgba(37, 99, 235, 0.15);
 }
-.dl-header h1 { color: #FFFFFF; font-size: 1.6rem; margin: 0; padding: 0; line-height: 1.2; }
-.dl-header p { color: #FFFFFF; opacity: 0.92; margin: 2px 0 0 0; font-size: 0.95rem; }
-/* The navy band runs straight into the white logo tile: they meet with no gap. */
-.dl-top { display: flex; align-items: stretch; }
-.dl-top .dl-header { flex: 1; border-radius: 10px 0 0 10px; }
+.dl-hero-copy { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.dl-hero .dl-tags { gap: 8px; }
+.dl-tag {
+  padding: 6px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.12);
+  font-size: 12px; font-weight: 700; line-height: 16px;
+}
+.dl-hero .dl-chip { background: rgba(255, 255, 255, 0.12); color: #FFFFFF; }
+.dl-hero h1 { color: #FFFFFF; font-size: 32px; line-height: 40px; font-weight: 700; margin: 0; padding: 0; }
+.dl-hero p { color: #FFFFFF; opacity: 0.9; font-size: 15px; line-height: 24px; margin: 0; }
 .dl-logo-tile {
-  display: flex; align-items: center; padding: 0 12px; background: #FFFFFF;
-  border: 2px solid var(--dl-accent); border-left: none; border-radius: 0 10px 10px 0;
+  display: flex; align-items: center; justify-content: center; flex: none;
+  width: 96px; height: 96px; border-radius: 20px; background: #FFFFFF; overflow: hidden;
 }
-.dl-logos { height: 78px; width: auto; }
+.dl-logos { width: 88px; height: auto; }
 
-/* A small status line under the band, pulled from right to left by a tiny truck, like TV news. */
-.dl-ticker { position: relative; overflow: hidden; height: 1.3rem; margin-top: 4px;
-             font-size: 0.75rem; color: var(--dl-gray); }
-.dl-ticker span { position: absolute; white-space: nowrap; top: 0; animation: dl-ticker 22s linear infinite; }
-@keyframes dl-ticker { from { left: 100%; } to { left: -45%; } }
-.dl-ticker-truck { vertical-align: -2px; margin-right: 4px; }
-/* Still, for anyone who asked Windows for less motion. */
-@media (prefers-reduced-motion: reduce) { .dl-ticker span { animation: none; left: 0; } }
-
-/* Opening screen: the logo beats twice like a heart, then everything fades away (about 2.5 s). */
+/* ---------- Opening screen: the logo beats twice like a heart, then everything fades away (about 2.5 s) ---------- */
 .dl-splash {
   position: fixed; inset: 0; z-index: 1000000;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
   background: #FFFFFF; animation: dl-splash-out 0.5s ease 2s forwards;
 }
-.dl-splash .dl-logos { height: 150px; animation: dl-beat 1s ease-in-out 2; }
+.dl-splash .dl-logos { width: auto; height: 150px; animation: dl-beat 1s ease-in-out 2; }
 .dl-splash-name { color: var(--dl-accent); font-size: 1.5rem; font-weight: 700; letter-spacing: 0.04em; }
 @keyframes dl-beat {
   0%, 30%, 60%, 100% { transform: scale(1); }
@@ -65,13 +78,104 @@
   .dl-splash { animation-delay: 0.6s; }
 }
 
-/* The Generate PDFs button in the logo's cerulean blue, with dark text so it stays easy to read.
-   (st-key-generate_pdfs is the class Streamlit gives the element with key generate_pdfs.)
-   Never write a less-than sign in this file: the page would drop the whole style. */
-.st-key-generate_pdfs button:not(:disabled) { background: var(--dl-cerulean); border-color: var(--dl-cerulean); }
-.st-key-generate_pdfs button:not(:disabled):hover { filter: brightness(0.93); }
-.st-key-generate_pdfs button:not(:disabled) p,
-.st-key-generate_pdfs button:not(:disabled) span { color: var(--dl-text); font-weight: 600; }
+/* ---------- Cards: bordered containers and the Workflow panel ----------
+   In Streamlit 1.65 a bordered card is the block directly inside a stLayoutWrapper;
+   the summary tiles' plain container is left out. */
+[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:not(.st-key-summary_tiles),
+.dl-panel {
+  background: var(--dl-card); border: 1px solid var(--dl-border); border-radius: 20px; padding: 20px;
+  box-shadow: 0 8px 12px rgba(15, 23, 42, 0.04);
+}
+.dl-panel h4, .st-key-client [data-testid="stWidgetLabel"] p {
+  font-size: 18px; font-weight: 700; line-height: 24px; color: var(--dl-text); margin: 0 0 16px 0; padding: 0;
+}
+
+/* ---------- Client choice: two equal cards side by side, the chosen one tinted blue ---------- */
+.st-key-client, .st-key-client [data-testid="stRadio"] { width: 100%; }
+.st-key-client [data-testid="stRadioGroup"] { gap: 16px; width: 100%; align-items: stretch; flex-wrap: wrap; }
+.st-key-client [data-testid="stRadioGroup"] > div {
+  flex: 1 1 260px; position: relative; cursor: pointer; padding: 16px; border-radius: 16px;
+  border: 1px solid var(--dl-border); background: var(--dl-card); transition: border-color 0.15s ease;
+}
+.st-key-client [data-testid="stRadioGroup"] > div:hover { border-color: var(--dl-accent); }
+.st-key-client [data-testid="stRadioGroup"] > div[data-selected="true"] {
+  background: var(--dl-soft); border-color: var(--dl-accent); box-shadow: 0 0 0 0.5px var(--dl-accent);
+}
+.st-key-client [data-testid="stRadioOption"] p { font-weight: 700; font-size: 16px; }
+.st-key-client [data-testid="stRadioCaption"] p { font-size: 14px; line-height: 22px; color: var(--dl-gray); }
+/* The round marker: 20 px, a white tick on blue when chosen, an empty grey circle when not. */
+.st-key-client [data-testid="stRadioOption"] > div > div:first-child {
+  width: 20px; height: 20px; margin-right: 4px; background-color: var(--dl-surface); border: 1px solid var(--dl-line);
+}
+.st-key-client [data-testid="stRadioOption"][data-selected="true"] > div > div:first-child {
+  border-color: var(--dl-accent);
+  background: var(--dl-accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M9.9996 3L4.50015 8.4996L2.0004 5.99978' stroke-width='2' stroke-linecap='round' stroke='white'/%3E%3C/svg%3E") center / 12px no-repeat;
+}
+.st-key-client [data-testid="stRadioOption"] > div > div:first-child > div { display: none; }
+/* The whole card is clickable: the option's label is stretched over the card (name and description). */
+.st-key-client [data-testid="stRadioOption"]::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }
+
+/* ---------- Workflow: Sample PDF, Excel, Job details, Generate ---------- */
+.dl-progress { display: flex; flex-wrap: wrap; gap: 12px; }
+.dl-pstep {
+  flex: 1 1 200px; display: flex; align-items: center; gap: 12px; padding: 16px;
+  background: var(--dl-card); border: 1px solid var(--dl-border); border-radius: 16px;
+}
+.dl-pnum {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 32px; height: 32px; border-radius: 50%; font-weight: 700; font-size: 14px;
+  background: var(--dl-surface); color: var(--dl-muted); border: 1px solid var(--dl-line);
+}
+.dl-plabel {
+  display: flex; flex-direction: column; gap: 2px;
+  font-weight: 700; font-size: 15px; line-height: 20px; color: var(--dl-gray);
+}
+.dl-plabel small { font-weight: 400; font-size: 12px; line-height: 16px; color: var(--dl-muted); }
+.dl-pstep.dl-current { background: var(--dl-soft); border-color: var(--dl-accent); box-shadow: 0 0 0 0.5px var(--dl-accent); }
+.dl-pstep.dl-current .dl-pnum { background: var(--dl-accent); color: #FFFFFF; border-color: var(--dl-accent); }
+.dl-pstep.dl-current .dl-plabel { color: var(--dl-text); }
+.dl-pstep.dl-current small { color: var(--dl-accent); }
+.dl-pstep.dl-done .dl-pnum { background: var(--dl-green); color: #FFFFFF; border-color: var(--dl-green); }
+.dl-pstep.dl-done .dl-plabel { color: var(--dl-text); }
+.dl-pstep.dl-done small { color: var(--dl-green); }
+
+/* ---------- Numbered step titles ---------- */
+.dl-step { display: flex; align-items: center; gap: 12px; margin: 0 0 4px 0; }
+.dl-step .dl-num {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--dl-accent); color: #FFFFFF; font-weight: 700; font-size: 15px;
+}
+.dl-step.dl-done .dl-num { background: var(--dl-green); }
+.dl-step h3 { margin: 0; padding: 0; font-size: 20px; line-height: 24px; font-weight: 700; }
+.dl-summary { color: var(--dl-gray); margin: 0 0 6px 44px; font-size: 14px; }
+[data-testid="stFileUploader"] [data-testid="stWidgetLabel"] p { font-size: 14px; color: var(--dl-gray); }
+
+/* ---------- Upload boxes: dashed blue outline on a light surface, the Upload button on the right ---------- */
+[data-testid="stFileUploaderDropzone"] {
+  display: flex; align-items: center; gap: 12px; padding: 20px; border-radius: 18px;
+  border: 1.5px dashed var(--dl-accent); background: var(--dl-surface); transition: background 0.15s ease;
+}
+[data-testid="stFileUploaderDropzone"]:hover { background: var(--dl-soft); }
+[data-testid="stFileUploaderDropzone"] > span { order: 2; margin-left: auto; }
+[data-testid="stFileUploaderDropzone"] button { background: var(--dl-card); border-color: var(--dl-line); font-weight: 600; }
+[data-testid="stFileUploaderDropzoneInstructions"] { order: 1; display: flex; align-items: center; gap: 12px; }
+/* The upload icon in a light-blue tile (the design's upload icon, stroke in the accent blue). */
+[data-testid="stFileUploaderDropzoneInstructions"]::before {
+  content: ""; flex: none; width: 40px; height: 40px; border-radius: 12px;
+  background: var(--dl-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M10 2.5V12.5M5.83333 6.66667L10 2.5L14.1667 6.66667M17.5 12.5V15.8333C17.5 16.2754 17.3244 16.6993 17.0118 17.0118C16.6993 17.3244 16.2754 17.5 15.8333 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V12.5' stroke-width='2' stroke-linecap='round' stroke='%232563EB'/%3E%3C/svg%3E") center / 20px no-repeat;
+}
+/* A bold title above Streamlit's "200MB per file" line; the sample and Excel boxes get their own. */
+[data-testid="stFileUploaderDropzoneInstructions"] > div { display: flex; flex-direction: column; gap: 2px; }
+[data-testid="stFileUploaderDropzoneInstructions"] > div::before {
+  content: "Upload a file"; font-weight: 700; font-size: 16px; line-height: 20px; color: var(--dl-text);
+}
+.st-key-pdf [data-testid="stFileUploaderDropzoneInstructions"] > div::before,
+[class*="st-key-pdf_"] [data-testid="stFileUploaderDropzoneInstructions"] > div::before { content: "Upload sample PDF"; }
+.st-key-xl [data-testid="stFileUploaderDropzoneInstructions"] > div::before,
+[class*="st-key-xl_"] [data-testid="stFileUploaderDropzoneInstructions"] > div::before { content: "Upload loading-order Excel"; }
+[class*="st-key-inspection_upload"] [data-testid="stFileUploaderDropzoneInstructions"] > div::before { content: "Upload inspection report"; }
+[data-testid="stFileUploaderDropzoneInstructions"] span { font-size: 13px; line-height: 18px; color: var(--dl-muted); }
 
 /* Uploaded files show a real file icon: red PDF for .pdf, green Excel for .xlsx / .xlsm / .xls.
    Streamlit puts the file name in the chip's aria-label ("name.pdf, 32.0B"). The two brand colours
@@ -92,87 +196,23 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='2' y='2' width='20' height='20' rx='3' fill='%23217346'/%3E%3Cpath d='M8 7l8 10M16 7l-8 10' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
-/* Progress tracker under the header: Sample PDF, Excel, Job details, Generate. */
-.dl-progress { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px 0; }
-.dl-pstep {
-  flex: 1 1 180px; display: flex; align-items: center; gap: 10px; padding: 8px 12px;
-  background: var(--dl-card); border: 1px solid var(--dl-border); border-radius: 10px;
-}
-.dl-pnum {
-  display: inline-flex; align-items: center; justify-content: center; flex: none;
-  width: 26px; height: 26px; border-radius: 50%; font-weight: 700; font-size: 0.85rem;
-  background: var(--dl-page); color: var(--dl-gray); border: 1px solid var(--dl-border);
-}
-.dl-plabel { display: flex; flex-direction: column; font-weight: 600; color: var(--dl-text); line-height: 1.2; }
-.dl-plabel small { font-weight: 400; font-size: 0.75rem; color: var(--dl-gray); }
-.dl-pstep.dl-done .dl-pnum { background: var(--dl-green); color: #FFFFFF; border-color: var(--dl-green); }
-.dl-pstep.dl-current { border-color: var(--dl-accent); box-shadow: 0 0 0 1px var(--dl-accent); }
-.dl-pstep.dl-current .dl-pnum { background: var(--dl-accent); color: #FFFFFF; border-color: var(--dl-accent); }
-.dl-pstep.dl-todo .dl-plabel { color: var(--dl-gray); }
-
-/* Step cards show their state: a navy stripe on the step being worked on, a green one when done. */
-[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:not(.st-key-summary_tiles):has(.dl-step) { border-left: 5px solid var(--dl-accent); }
-[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:not(.st-key-summary_tiles):has(.dl-step.dl-done) { border-left-color: var(--dl-green); }
-[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:not(.st-key-summary_tiles) { transition: box-shadow 0.15s ease; }
-[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:not(.st-key-summary_tiles):hover { box-shadow: 0 4px 14px rgba(16, 24, 40, 0.10); }
-
-/* Upload boxes: a dashed navy outline that lights up on hover or when a file is dragged over it. */
-[data-testid="stFileUploaderDropzone"] {
-  border: 2px dashed var(--dl-accent); background: var(--dl-card); transition: background 0.15s ease;
-}
-[data-testid="stFileUploaderDropzone"]:hover { background: var(--dl-page); }
-
-/* No developer clutter: Streamlit's Deploy button and coloured top line mean nothing to a manager. */
-[data-testid="stAppDeployButton"], [data-testid="stDecoration"] { display: none; }
-
-/* ---------- Modern look (v1.7): gradient header, rounder cards, client cards, pill buttons ---------- */
-.dl-header { background: linear-gradient(135deg, var(--dl-accent) 0%, var(--dl-accent2) 100%);
-             padding: 18px 22px; }
-.dl-top .dl-header { border-radius: 16px 0 0 16px; }
-.dl-logo-tile { border-radius: 0 16px 16px 0; }
-.dl-header h1 { font-size: 1.85rem; letter-spacing: -0.01em; }
-h3, .dl-step h3 { letter-spacing: -0.005em; }
-
-/* Cards: rounder, lighter border, a soft lift */
-[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:not(.st-key-summary_tiles) {
-  border-radius: 14px; border-color: var(--dl-border);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 2px 8px rgba(16, 24, 40, 0.04);
-}
-
-/* Client choice as two selectable cards */
-.st-key-client [data-testid="stRadioGroup"] { gap: 12px; width: 100%; align-items: stretch; }
-.st-key-client [data-testid="stRadioGroup"] > div {
-  flex: 1 1 260px; padding: 10px 14px; border: 1px solid var(--dl-border); border-radius: 12px;
-  background: var(--dl-card); transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.st-key-client [data-testid="stRadioGroup"] > div:hover { border-color: var(--dl-accent); }
-.st-key-client [data-testid="stRadioGroup"] > div[data-selected="true"] {
-  border-color: var(--dl-accent); box-shadow: 0 0 0 2px var(--dl-accent); background: var(--dl-page);
-}
-.st-key-client [data-testid="stRadioOption"] p { font-weight: 700; font-size: 1.05rem; }
-/* The whole card is clickable: the option's label is stretched over the card (name and description). */
-.st-key-client [data-testid="stRadioGroup"] > div { position: relative; cursor: pointer; }
-.st-key-client [data-testid="stRadioOption"]::after { content: ""; position: absolute; inset: 0; border-radius: 12px; }
-
+/* ---------- Buttons ---------- */
+/* The Generate PDFs button in the logo's cerulean blue, with dark text so it stays easy to read.
+   (st-key-generate_pdfs is the class Streamlit gives the element with key generate_pdfs.) */
+.st-key-generate_pdfs button:not(:disabled) { background: var(--dl-cerulean); border-color: var(--dl-cerulean); }
+.st-key-generate_pdfs button:not(:disabled):hover { filter: brightness(0.93); }
+.st-key-generate_pdfs button:not(:disabled) p,
+.st-key-generate_pdfs button:not(:disabled) span { color: var(--dl-text); font-weight: 600; }
 /* Pill-shaped buttons, including downloads and Generate */
 [data-testid^="stBaseButton-primary"], [data-testid^="stBaseButton-secondary"] { border-radius: 999px; }
 
-/* Rounder tables, expanders, messages and the progress tracker */
+/* Rounder tables, expanders and messages */
 [data-testid="stDataFrame"] { border-radius: 12px; overflow: hidden; }
 [data-testid="stExpander"] details { border-radius: 12px; }
 [data-testid="stAlert"] { border-radius: 12px; }
-.dl-pstep { border-radius: 12px; }
 
-/* Numbered step titles */
-.dl-step { display: flex; align-items: center; gap: 10px; margin: 0 0 2px 0; }
-.dl-step .dl-num {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 50%;
-  background: var(--dl-accent); color: #FFFFFF; font-weight: 700; font-size: 0.95rem;
-}
-.dl-step.dl-done .dl-num { background: var(--dl-green); }
-.dl-step h3 { margin: 0; padding: 0; font-size: 1.25rem; }
-.dl-summary { color: var(--dl-gray); margin: 0 0 6px 38px; font-size: 0.95rem; }
+/* No developer clutter: Streamlit's Deploy button and coloured top line mean nothing to a manager. */
+[data-testid="stAppDeployButton"], [data-testid="stDecoration"] { display: none; }
 
 /* Footer */
 .dl-footer { color: var(--dl-gray); text-align: center; font-size: 0.85rem; margin-top: 18px; }

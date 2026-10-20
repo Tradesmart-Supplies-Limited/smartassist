@@ -11,7 +11,7 @@ import tomllib
 
 import streamlit as st
 
-VERSION = "1.7"
+VERSION = "1.8"
 PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -23,16 +23,22 @@ def _theme():
 
 THEME = _theme()
 COLORS = {
-    "accent": THEME.get("primaryColor", "#1F4E79"),
-    "text": THEME.get("textColor", "#1B2533"),
-    "page": THEME.get("backgroundColor", "#F5F7FA"),
+    "accent": THEME.get("primaryColor", "#2563EB"),
+    "text": THEME.get("textColor", "#0F172A"),
+    "page": THEME.get("backgroundColor", "#F7FAFF"),
     "card": "#FFFFFF",
-    "green": THEME.get("greenColor", "#1E7A46"),
+    "green": THEME.get("greenColor", "#15803D"),
     "orange": THEME.get("orangeColor", "#985800"),
     "red": THEME.get("redColor", "#B42318"),
-    "gray": THEME.get("grayColor", "#5A6676"),
-    "border": THEME.get("borderColor", "#D3DCE6"),
-    "accent2": "#2A6AA3",       # header gradient end: a brighter navy (white text on it 5.7:1)
+    "gray": THEME.get("grayColor", "#475569"),
+    "border": THEME.get("borderColor", "#E2E8F0"),
+    # Tints from the Figma design (2026-10-20), used only as backgrounds or lines, never as text colours
+    "accent2": "#1D4ED8",       # hero gradient end and blue chip text (white text on it 6.7:1)
+    "soft": "#EFF6FF",          # selected card / step, blue chip
+    "surface": "#F8FAFC",       # upload box, empty step number
+    "line": "#CBD5E1",          # outline of empty circles and white buttons
+    "muted": "#64748B",         # small secondary text (4.8:1 on white)
+    "green_soft": "#ECFDF3",    # the Offline chip
     "cerulean": "#4CA8DC",      # the Tradesmart logo's blue, for the Generate button only (see config.toml)
 }
 
@@ -45,20 +51,12 @@ STATUS = {
     "excluded": "➖ Excluded",
 }
 
-# A simple truck logo, drawn in code (no image file, no download).
-LOGO = """<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
-<rect x="2" y="12" width="22" height="14" rx="2" fill="#FFFFFF"/>
-<path d="M24 16h7l5 5v5H24z" fill="#FFFFFF" opacity="0.85"/>
-<circle cx="10" cy="29" r="3.5" fill="#FFFFFF"/><circle cx="30" cy="29" r="3.5" fill="#FFFFFF"/>
-<path d="M7 19h12M7 22h8" stroke="currentColor" stroke-width="2"/></svg>"""
 
-
-# A tiny truck facing left (cab in front) that pulls the status line along, drawn in code.
-TICKER_TRUCK = """<svg class="dl-ticker-truck" width="30" height="13" viewBox="0 0 30 13" aria-hidden="true">
-<path d="M1 10V6l2.5-4H9v8z" fill="var(--dl-accent)"/><rect x="3.5" y="3" width="3.5" height="2.5" fill="#FFFFFF"/>
-<rect x="10" y="1" width="19" height="9" rx="1" fill="var(--dl-accent)"/><rect x="9" y="8" width="2" height="1.5" fill="var(--dl-gray)"/>
-<circle cx="5" cy="11" r="1.8" fill="var(--dl-text)"/><circle cx="20" cy="11" r="1.8" fill="var(--dl-text)"/>
-<circle cx="25" cy="11" r="1.8" fill="var(--dl-text)"/></svg>"""
+def _icon(name):
+    """One of the design's icons (assets/icons/<name>.svg), embedded in the page itself."""
+    with open(os.path.join(PROJECT, "assets", "icons", f"{name}.svg"), "rb") as f:
+        data = base64.b64encode(f.read()).decode("ascii")
+    return f'<img class="dl-icon" src="data:image/svg+xml;base64,{data}" alt="">'
 
 
 def _logos():
@@ -85,32 +83,59 @@ def apply_style():
     st.html(f"<style>:root{{{variables}}}\n{css}</style>")
 
 
+TITLE = "DocuLoop"
+TAGLINE = "Road manifest, commercial invoice and packing list from your Excel sheet"
+
+
 def header(client_name):
-    """The top: the navy band running into the logos, and a small status ticker under it."""
-    status = (f"Client: {html.escape(client_name)} · 🔒 Works offline, nothing leaves this computer · "
-              f"DocuLoop v{VERSION}")
+    """The white top bar (name and status chips), then a slot for the blue hero that progress() fills."""
+    name = html.escape(client_name)
     st.markdown(
-        '<div class="dl-top">'
-        f'<div class="dl-header" style="color:{COLORS["accent"]}">{LOGO}<div>'
-        '<h1>DocuLoop</h1><p>Road manifest, commercial invoice and packing list from your Excel sheet</p>'
-        f'</div></div><div class="dl-logo-tile">{_logos()}</div></div>'
-        f'<div class="dl-ticker" role="status"><span>{TICKER_TRUCK} {status}</span></div>',
-        unsafe_allow_html=True)
+        '<div class="dl-topbar"><div class="dl-brand">'
+        f'<span class="dl-mark">{_icon("file-text")}</span>'
+        f'<div><div class="dl-brand-name">{TITLE}</div><div class="dl-brand-sub">{TAGLINE}</div></div></div>'
+        '<div class="dl-chips" role="status">'
+        f'<span class="dl-chip dl-chip-blue">{_icon("building")} Client: {name}</span>'
+        f'<span class="dl-chip dl-chip-green">{_icon("lock")} Offline</span>'
+        f'<span class="dl-chip dl-chip-gray">{_icon("info")} v{VERSION}</span>'
+        '</div></div>', unsafe_allow_html=True)
+    st.session_state["_dl_client_name"] = client_name
+    return st.empty()
 
 
 PROGRESS_STEPS = ["Sample PDF", "Loading-order Excel", "Job details", "Generate"]
 
 
-def progress(place, steps_done):
-    """The progress tracker under the header: done steps get a green tick, the next one is highlighted."""
+def _hero(place, steps_done):
+    """The blue hero: where the manager is now, the app's name and the same status as the top bar."""
+    name = html.escape(st.session_state.get("_dl_client_name", ""))
+    current = [f"{name} sample PDF", f"{name} loading-order Excel", "Job details", "Generate"]
+    if steps_done < len(current):
+        tags = f'<span class="dl-tag">Step {steps_done + 1}</span><span class="dl-tag">{current[steps_done]}</span>'
+    else:
+        tags = '<span class="dl-tag">✓ All steps done</span>'
+    place.markdown(
+        f'<div class="dl-hero"><div class="dl-hero-copy"><div class="dl-tags">{tags}</div>'
+        f'<h1>{TITLE}</h1><p>{TAGLINE}</p><div class="dl-tags">'
+        f'<span class="dl-chip">{_icon("file-text-hero")} Client: {name}</span>'
+        f'<span class="dl-chip">{_icon("lock-hero")} Offline</span>'
+        f'<span class="dl-chip">{_icon("info-hero")} {TITLE} v{VERSION}</span>'
+        f'</div></div><div class="dl-logo-tile">{_logos()}</div></div>', unsafe_allow_html=True)
+
+
+def progress(place, steps_done, hero=None):
+    """The Workflow card: done steps get a green tick, the next one is highlighted. Also redraws the hero."""
+    if hero is not None:
+        _hero(hero, steps_done)
     items = []
     for n, label in enumerate(PROGRESS_STEPS, start=1):
         state = "done" if n <= steps_done else ("current" if n == steps_done + 1 else "todo")
         mark = "✓" if state == "done" else str(n)
         word = {"done": "Done", "current": "Next", "todo": "Waiting"}[state]   # never colour alone
-        items.append(f'<div class="dl-pstep dl-{state}"><span class="dl-pnum">{mark}</span>'
+        items.append(f'<div class="dl-pstep dl-{state}" role="listitem"><span class="dl-pnum">{mark}</span>'
                      f'<span class="dl-plabel">{label}<small>{word}</small></span></div>')
-    place.markdown(f'<div class="dl-progress" role="list">{"".join(items)}</div>', unsafe_allow_html=True)
+    place.markdown(f'<div class="dl-panel"><h4>Workflow</h4><div class="dl-progress" role="list">{"".join(items)}'
+                   '</div></div>', unsafe_allow_html=True)
 
 
 def step_header(place, number, title, done=False, summary=""):

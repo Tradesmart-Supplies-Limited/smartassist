@@ -62,7 +62,7 @@ def file_kind(data):
 CLIENT_IDS = [c.ID for c in list_clients()]
 st.session_state.setdefault("active_client", CLIENT_IDS[0])
 st.session_state.setdefault("client", st.session_state.active_client)
-ui.header(get_client(st.session_state.active_client).NAME)
+hero_slot = ui.header(get_client(st.session_state.active_client).NAME)
 SETTING_KEYS = [ins.KEY_DATE, ins.KEY_SOURCE, ins.KEY_TONNAGE, ins.KEY_PACKAGES, *ins.KEY_LABELS.values(),
                 *ins.KEY_PRICES.values()]
 
@@ -90,7 +90,7 @@ def on_client_change():
 
 
 with st.container(border=True):
-    st.radio("Client", CLIENT_IDS, key="client", horizontal=True, on_change=on_client_change,
+    st.radio("Client selector", CLIENT_IDS, key="client", horizontal=True, on_change=on_client_change,
              format_func=lambda client_id: get_client(client_id).NAME,
              captions=[get_client(client_id).DESCRIPTION for client_id in CLIENT_IDS])
     pending_switch = st.session_state.get("client_switch_pending")
@@ -105,7 +105,7 @@ with st.container(border=True):
 
 # Progress tracker: drawn now with nothing done, then redrawn as each step is completed.
 progress_slot = st.empty()
-ui.progress(progress_slot, 0)
+ui.progress(progress_slot, 0, hero_slot)
 
 client = get_client(st.session_state.active_client)
 upload_round = st.session_state.get("upload_round", 0)
@@ -178,7 +178,7 @@ with st.container(border=True):
         st.stop()
     template = st.session_state.template
     sample = template["sample"]
-    ui.progress(progress_slot, 1)
+    ui.progress(progress_slot, 1, hero_slot)
     ui.step_header(step1, 1, f"{client.NAME} sample PDF", done=True,
                    summary=f"Sample recognised: {pdf_file.name} · all {len(template['spots'])} fields found on "
                            f"pages 1-3 (sample invoice {sample['invoice_no']}). Any later pages are ignored.")
@@ -265,7 +265,7 @@ with st.container(border=True):
         st.error("These columns were not found: " + ", ".join(missing) + f". Check that this is the {client.NAME} "
                  "Excel, or choose the columns in 'Column matching'.", icon=":material/error:")
         st.stop()
-    ui.progress(progress_slot, 2)
+    ui.progress(progress_slot, 2, hero_slot)
     ui.step_header(step2, 2, f"{client.NAME} loading-order Excel", done=True,
                    summary=f"{xl_file.name} · sheet '{sheet_name}' · titles on row {int(header_row) + 1} · "
                            f"{len(table)} rows read")
@@ -365,7 +365,7 @@ with step3_card:
         fixed_tonnage = Decimal(f"{f1.number_input('Tonnage (MT) for every truck', min_value=0.01, step=0.5, format='%.2f', key=ins.KEY_TONNAGE):.2f}")
         fixed_packages = Decimal(int(f2.number_input("Packages for every truck", min_value=1, step=1,
                                                      key=ins.KEY_PACKAGES)))
-    ui.progress(progress_slot, 3)
+    ui.progress(progress_slot, 3, hero_slot)
     ui.step_header(step3, 3, "Job details", done=True,
                    summary=f"Date {date_text} · coal ${prices['coal']} · {source.split(' (')[0]}")
 
@@ -503,7 +503,7 @@ with st.container(border=True):
         st.caption("Click Generate to make one 3-page PDF per ready truck.")
     else:
         files = results["files"]
-        ui.progress(progress_slot, 4)
+        ui.progress(progress_slot, 4, hero_slot)
         ui.step_header(step4, 4, "Generate", done=True,
                        summary=f"{client.NAME}: {len(files)} PDFs made for {results['date']}")
         if results["jobs"] != jobs:
