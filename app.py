@@ -497,18 +497,6 @@ with st.container(border=True):
         st.success(f"{client.NAME}: {len(files)} PDFs ready, 3 pages each · {skipped} skipped · "
                    f"{waiting} waiting", icon=":material/task_alt:")
 
-        with st.expander("Download one truck at a time", icon=":material/description:"):
-            head = st.columns([2, 3, 2, 2])
-            for col, title in zip(head, ["Invoice No.", "Driver", "Invoice total", ""]):
-                col.markdown(f"**{title}**")
-            for n, ((file_name, data), (_name, values)) in enumerate(zip(files, results["jobs"])):
-                c1, c2, c3, c4 = st.columns([2, 3, 2, 2], vertical_alignment="center")
-                c1.write(values["invoice_no"])
-                c2.write(values["driver"])
-                c3.write(md(values["total"]))
-                c4.download_button(file_name, data, file_name=file_name,
-                                   mime="application/pdf", key=f"download_{n}", icon=":material/download:")
-
         with st.container(border=True):
             st.markdown("**:material/preview: Preview**")
             names = [file_name for file_name, _data in files]
