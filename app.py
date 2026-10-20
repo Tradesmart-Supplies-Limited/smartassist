@@ -5,7 +5,6 @@ import io
 import os
 import re
 import traceback
-import zipfile
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -479,13 +478,9 @@ with st.container(border=True):
         for n, (file_name, values) in enumerate(jobs, start=1):
             files.append((file_name, build_pdf(template, values)))
             bar.progress(n / len(jobs), text=f"{n} of {len(jobs)}: {file_name}")
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as archive:
-            for file_name, data in files:
-                archive.writestr(file_name, data)
         bar.empty()
         # Keep the results, so they stay on screen after a download click.
-        st.session_state.results = {"files": files, "zip": zip_buffer.getvalue(),
+        st.session_state.results = {"files": files,
                                     "jobs": jobs, "date": date_text, "client": client.ID}
 
     results = st.session_state.get("results")
@@ -501,9 +496,6 @@ with st.container(border=True):
                        "Click 'Generate PDFs' again to update them.", icon=":material/warning:")
         st.success(f"{client.NAME}: {len(files)} PDFs ready, 3 pages each · {skipped} skipped · "
                    f"{waiting} waiting", icon=":material/task_alt:")
-        st.download_button("Download everything (ZIP)", results["zip"],
-                           file_name=f"DocuLoop_{client.NAME}_{results['date']}.zip", mime="application/zip",
-                           key="download_zip", type="primary", icon=":material/download:")
 
         with st.expander("Download one truck at a time", icon=":material/description:"):
             head = st.columns([2, 3, 2, 2])

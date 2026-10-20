@@ -193,6 +193,8 @@ Things learned while building:
   whole style. `tests\test_style.py` checks this.
 - Inspection report downloads offer only "Combined single PDF per truck" (owner's requests: the
   separate-files option was removed 2026-10-14, "Documents only" 2026-10-16). No choice is shown.
+- Step 4 has no "Download everything (ZIP)" button any more (owner's request, 2026-10-20): the full ZIP
+  comes only from the inspection-report section. Step 4 keeps "Download one truck at a time" and the preview.
 
 ## Streamlit notes
 - No `use_container_width`. Keep results in `st.session_state`. Every download button needs a unique key.
