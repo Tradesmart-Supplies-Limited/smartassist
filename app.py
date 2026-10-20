@@ -271,7 +271,7 @@ with st.container(border=True):
                            f"{len(table)} rows read")
 
 # The summary tiles appear here; they are filled in once the trucks have been checked.
-tiles = st.container()
+tiles = st.container(key="summary_tiles")      # a plain container: no card styling (see style.css)
 
 # ---------------- Step 3: job details ----------------
 step3_card = st.container(border=True)

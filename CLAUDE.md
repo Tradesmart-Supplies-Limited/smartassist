@@ -179,6 +179,12 @@ Things learned while building:
   inside those two inline SVG icons in style.css. Cosmetic only: file TYPE checks still use content.
 - Browser-tab icon: `assets\favicon.png`, a truck in the logo's cerulean #4CA8DC (box) and green
   #84C440 (cab), set with `page_icon` in `app.py` (owner's request, 2026-10-16).
+- Cards: in Streamlit 1.65 a bordered `st.container(border=True)` is the `stVerticalBlock` directly inside a
+  `stLayoutWrapper` (the old `stVerticalBlockBorderWrapper` no longer exists). style.css targets
+  `[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:not(.st-key-summary_tiles)`; the summary
+  tiles' plain container has key `summary_tiles` so it is left out. Step cards get a navy left stripe, green
+  when done (`:has(.dl-step.dl-done)`). Upload boxes have a dashed navy outline; Streamlit's Deploy button
+  and top decoration are hidden.
 - Never write "<" in `assets\style.css` (not even in a comment): the page's safety filter then drops the
   whole style. `tests\test_style.py` checks this.
 - Inspection report downloads offer only "Combined single PDF per truck" (owner's requests: the
