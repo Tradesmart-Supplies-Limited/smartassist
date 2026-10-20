@@ -211,24 +211,6 @@ Things learned while building:
 - Inspection report downloads offer only "Combined single PDF per truck" (owner's requests: the
   separate-files option was removed 2026-10-14, "Documents only" 2026-10-16). No choice is shown.
 
-## Team access (owner's decision, 2026-10-20)
-- Goal: zero cost. DocuLoop runs on one office PC; the manager and 3 colleagues (MAX_USERS = 4) use it
-  from the office network (computers and phones). No VPS, no cloud, no new packages.
-- `core\auth.py` (no Streamlit): users in `private\users.json` (git-ignored), passwords scrambled with
-  hashlib PBKDF2-SHA256 + random salt, compared with `hmac.compare_digest`; user names lower-case;
-  passwords at least 8 characters. `log_generation` appends to `output\generation_log.csv`
-  (date, user, client, number of PDFs, file names) each time PDFs are generated.
-- `manage_users.py` / `manage_users.bat`: menu to add, reset, remove users (getpass, never shown).
-  `manage_users.py check` exits 1 when there are no users.
-- `app.py`: as soon as a users file has users, a login screen comes first (5 wrong tries = 30 s wait);
-  the top bar shows a 👤 chip and a "Sign out" button (key `sign_out`, CSS-placed in the top bar) that
-  clears the whole session. Without users the app opens as before (single PC).
-- `start_doculoop_network.bat`: refuses to start without users, uses fixed port 8501,
-  `--server.address 0.0.0.0`, prints `http://%COMPUTERNAME%:8501` and the PC's IPv4 addresses.
-  `start_doculoop.bat` stays localhost-only. The owner clicks Allow on the Windows firewall prompt.
-- Phone layout: `@media (max-width: 700px)` block at the end of style.css (checked at 375 px).
-- Tests: `tests\test_auth.py`.
-
 ## Streamlit notes
 - No `use_container_width`. Keep results in `st.session_state`. Every download button needs a unique key.
 

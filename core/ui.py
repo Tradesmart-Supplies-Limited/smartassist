@@ -87,26 +87,17 @@ TITLE = "DocuLoop"
 TAGLINE = "Road manifest, commercial invoice and packing list from your Excel sheet"
 
 
-def _brand():
-    return f'<div class="dl-brand"><span class="dl-mark">{_logos()}</span><div class="dl-brand-name">{TITLE}</div></div>'
-
-
-def login_header():
-    """The white top bar on the login screen: logo and name only."""
-    st.markdown(f'<div class="dl-topbar">{_brand()}</div>', unsafe_allow_html=True)
-
-
-def header(client_name, user=None):
-    """The white top bar (logo, name and status chips), then a slot for the blue hero that progress() fills.
-    With a login, the chips also show who is signed in, and the Sign out button sits at the bar's right end."""
+def header(client_name):
+    """The white top bar (name and status chips), then a slot for the blue hero that progress() fills."""
     name = html.escape(client_name)
-    who = f'<span class="dl-chip dl-chip-gray">👤 {html.escape(user)}</span>' if user else ""
     st.markdown(
-        f'<div class="dl-topbar{" dl-with-user" if user else ""}">{_brand()}'
+        '<div class="dl-topbar"><div class="dl-brand">'
+        f'<span class="dl-mark">{_logos()}</span>'
+        f'<div class="dl-brand-name">{TITLE}</div></div>'
         '<div class="dl-chips" role="status">'
         f'<span class="dl-chip dl-chip-blue">{_icon("building")} Client: {name}</span>'
         f'<span class="dl-chip dl-chip-green">{_icon("lock")} Offline</span>'
-        f'<span class="dl-chip dl-chip-gray">{_icon("info")} v{VERSION}</span>{who}'
+        f'<span class="dl-chip dl-chip-gray">{_icon("info")} v{VERSION}</span>'
         '</div></div>', unsafe_allow_html=True)
     st.session_state["_dl_client_name"] = client_name
     return st.empty()

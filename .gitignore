@@ -10,6 +10,3 @@ __pycache__/
 
 # Streamlit local settings
 .streamlit/secrets.toml
-
-# Users and their scrambled passwords (manage_users.bat): never commit
-private/
