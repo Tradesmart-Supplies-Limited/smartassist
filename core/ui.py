@@ -1,5 +1,5 @@
 # Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
-"""Small helpers for DocuLoop's look. UI only: nothing here changes a figure or a document.
+"""Small helpers for SmartAssist's look. UI only: nothing here changes a figure or a document.
 
 All colours come from the [theme] block of .streamlit/config.toml (the one place to change them).
 Everything is local: system fonts, inline SVG and Streamlit's own bundled icons.
@@ -73,7 +73,7 @@ def _logos():
 
 def splash():
     """The opening screen: the logo beats twice, then the screen fades away to the app."""
-    st.markdown(f'<div class="dl-splash" aria-hidden="true">{_logos()}<div class="dl-splash-name">DocuLoop</div></div>',
+    st.markdown(f'<div class="dl-splash" aria-hidden="true">{_logos()}<div class="dl-splash-name">SmartAssist</div></div>',
                 unsafe_allow_html=True)
 
 
@@ -88,11 +88,11 @@ def apply_style():
 def header(client_name):
     """The top: the navy band running into the logos, and a small status ticker under it."""
     status = (f"Client: {html.escape(client_name)} · 🔒 Works offline, nothing leaves this computer · "
-              f"DocuLoop v{VERSION}")
+              f"SmartAssist v{VERSION}")
     st.markdown(
         '<div class="dl-top">'
         f'<div class="dl-header" style="color:{COLORS["accent"]}">{LOGO}<div>'
-        '<h1>DocuLoop</h1><p>Road manifest, commercial invoice and packing list from your Excel sheet</p>'
+        '<h1>SmartAssist</h1><p>Road manifest, commercial invoice and packing list from your Excel sheet</p>'
         f'</div></div><div class="dl-logo-tile">{_logos()}</div></div>'
         f'<div class="dl-ticker" role="status"><span>{TICKER_TRUCK} {status}</span></div>',
         unsafe_allow_html=True)
@@ -139,5 +139,5 @@ def status_of(text):
 
 def footer():
     st.markdown(f'<div class="dl-footer">© 2026 Tradesmart Supplies Limited. All rights reserved.<br>'
-                f'Developed by Tradesmart Supplies Limited · DocuLoop v{VERSION} · '
+                f'Developed by Tradesmart Supplies Limited · SmartAssist v{VERSION} · '
                 'Works within the Tradesmart Supplies Limited Network</div>', unsafe_allow_html=True)

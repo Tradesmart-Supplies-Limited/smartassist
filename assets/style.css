@@ -1,5 +1,5 @@
 /* Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde. */
-/* DocuLoop look. Colours come from the --dl-* variables, which core/ui.py fills in
+/* SmartAssist look. Colours come from the --dl-* variables, which core/ui.py fills in
    from the [theme] block of .streamlit/config.toml. Only stable data-testid selectors are used. */
 
 /* Page: a comfortable maximum width, so nothing scrolls sideways at 1366 px. */

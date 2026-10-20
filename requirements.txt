@@ -1,4 +1,4 @@
-# The exact versions DocuLoop is tested with (install: .venv\Scripts\python -m pip install -r requirements.txt)
+# The exact versions SmartAssist is tested with (install: .venv\Scripts\python -m pip install -r requirements.txt)
 streamlit==1.65.0
 pandas==3.0.6
 openpyxl==3.1.5
