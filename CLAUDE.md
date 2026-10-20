@@ -198,7 +198,7 @@ Things learned while building:
   the v1.6/v1.7 navy header band, ticker, left step stripes and old accent2 described above.
   `ui.header()` draws the full-width white top bar (Tradesmart logo in a white tile, the name, and the
   client/offline/version chips) and returns `hero_slot`; `ui.progress(progress_slot, steps_done, hero_slot)`
-  redraws the blue hero ("Step n" + step name tags, name, tagline) and the "Workflow" card.
+  redraws the blue hero ("Step n" + step name tags and the tagline; owner removed the name "DocuLoop" from it) and the "Workflow" card.
   Owner's changes to the design (2026-10-20): no tagline in the top bar, no chips and no logo in the hero
   (the logo moved to the top bar), and the sample box's hint shows only "PDF" (CSS; the box still accepts
   Excel files so it can say "use the other box"). The client radio's label is "Client selector". Icons from the design

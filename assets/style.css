@@ -50,7 +50,6 @@
   padding: 6px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.12);
   font-size: 12px; font-weight: 700; line-height: 16px;
 }
-.dl-hero h1 { color: #FFFFFF; font-size: 32px; line-height: 40px; font-weight: 700; margin: 0; padding: 0; }
 .dl-hero p { color: #FFFFFF; opacity: 0.9; font-size: 15px; line-height: 24px; margin: 0; }
 
 /* ---------- Opening screen: the logo beats twice like a heart, then everything fades away (about 2.5 s) ---------- */
