@@ -14,7 +14,7 @@ import streamlit as st
 
 from core import inspection as insp
 from core import instructions as ins
-from core import llm, ui
+from core import ui
 from core.clients import detect_client_from_excel, detect_client_from_pdf, get_client, list_clients, pairing_problem
 from core.excel_reader import clean_sheet, detect_header_row, read_raw_sheets
 from core.pdf_builder import (LayoutError, agent_for_border, build_pdf, document_values, format_date,
@@ -58,19 +58,11 @@ def file_kind(data):
     return "other"
 
 
-@st.cache_data(ttl=60, show_spinner=False)
-def reader_status():
-    """Is Ollama there? Checked at most once a minute (the check is slow when Ollama is off)."""
-    return llm.status()
-
-
-reader_ok, reader_message = reader_status()
-ui.header(reader_ok, llm.MODEL)
-
 # ---------------- Client choice (remembered in this browser session only) ----------------
 CLIENT_IDS = [c.ID for c in list_clients()]
 st.session_state.setdefault("active_client", CLIENT_IDS[0])
 st.session_state.setdefault("client", st.session_state.active_client)
+ui.header(get_client(st.session_state.active_client).NAME)
 SETTING_KEYS = [ins.KEY_DATE, ins.KEY_SOURCE, ins.KEY_TONNAGE, ins.KEY_PACKAGES, *ins.KEY_LABELS.values(),
                 *ins.KEY_PRICES.values()]
 
@@ -99,7 +91,8 @@ def on_client_change():
 
 with st.container(border=True):
     st.radio("Client", CLIENT_IDS, key="client", horizontal=True, on_change=on_client_change,
-             format_func=lambda client_id: get_client(client_id).NAME)
+             format_func=lambda client_id: get_client(client_id).NAME,
+             captions=[get_client(client_id).DESCRIPTION for client_id in CLIENT_IDS])
     pending_switch = st.session_state.get("client_switch_pending")
     if pending_switch:
         st.warning(f"Switching to {get_client(pending_switch).NAME} clears the sample, the Excel and the PDFs "
@@ -109,6 +102,10 @@ with st.container(border=True):
                   on_click=switch_client, args=(pending_switch,))
         b2.button(f"Stay on {get_client(st.session_state.active_client).NAME}", key="cancel_client_switch",
                   on_click=lambda: st.session_state.pop("client_switch_pending", None))
+
+# Progress tracker: drawn now with nothing done, then redrawn as each step is completed.
+progress_slot = st.empty()
+ui.progress(progress_slot, 0)
 
 client = get_client(st.session_state.active_client)
 upload_round = st.session_state.get("upload_round", 0)
@@ -181,6 +178,7 @@ with st.container(border=True):
         st.stop()
     template = st.session_state.template
     sample = template["sample"]
+    ui.progress(progress_slot, 1)
     ui.step_header(step1, 1, f"{client.NAME} sample PDF", done=True,
                    summary=f"Sample recognised: {pdf_file.name} · all {len(template['spots'])} fields found on "
                            f"pages 1-3 (sample invoice {sample['invoice_no']}). Any later pages are ignored.")
@@ -267,6 +265,7 @@ with st.container(border=True):
         st.error("These columns were not found: " + ", ".join(missing) + f". Check that this is the {client.NAME} "
                  "Excel, or choose the columns in 'Column matching'.", icon=":material/error:")
         st.stop()
+    ui.progress(progress_slot, 2)
     ui.step_header(step2, 2, f"{client.NAME} loading-order Excel", done=True,
                    summary=f"{xl_file.name} · sheet '{sheet_name}' · titles on row {int(header_row) + 1} · "
                            f"{len(table)} rows read")
@@ -366,6 +365,7 @@ with step3_card:
         fixed_tonnage = Decimal(f"{f1.number_input('Tonnage (MT) for every truck', min_value=0.01, step=0.5, format='%.2f', key=ins.KEY_TONNAGE):.2f}")
         fixed_packages = Decimal(int(f2.number_input("Packages for every truck", min_value=1, step=1,
                                                      key=ins.KEY_PACKAGES)))
+    ui.progress(progress_slot, 3)
     ui.step_header(step3, 3, "Job details", done=True,
                    summary=f"Date {date_text} · coal ${prices['coal']} · {source.split(' (')[0]}")
 
@@ -503,6 +503,7 @@ with st.container(border=True):
         st.caption("Click Generate to make one 3-page PDF per ready truck.")
     else:
         files = results["files"]
+        ui.progress(progress_slot, 4)
         ui.step_header(step4, 4, "Generate", done=True,
                        summary=f"{client.NAME}: {len(files)} PDFs made for {results['date']}")
         if results["jobs"] != jobs:

@@ -18,6 +18,7 @@ from decimal import Decimal
 
 ID = "bms"
 NAME = "BMS"
+DESCRIPTION = "Kitwe → BMS · 40.00 MT and 40 packages per truck · agent by border"
 READY = True            # this profile is complete and can build documents
 
 # ---- recognition (from file CONTENT only, never from file names) ----

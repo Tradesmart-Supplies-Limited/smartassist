@@ -19,6 +19,7 @@ from decimal import Decimal
 
 ID = "gck"
 NAME = "GCK"
+DESCRIPTION = "Kitwe → GCK Likasi · tonnage and packages from the Excel"
 READY = True
 
 # ---- recognition (from file CONTENT only, never from file names) ----

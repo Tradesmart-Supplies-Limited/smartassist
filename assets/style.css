@@ -91,6 +91,24 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='2' y='2' width='20' height='20' rx='3' fill='%23217346'/%3E%3Cpath d='M8 7l8 10M16 7l-8 10' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
+/* Progress tracker under the header: Sample PDF, Excel, Job details, Generate. */
+.dl-progress { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px 0; }
+.dl-pstep {
+  flex: 1 1 180px; display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  background: var(--dl-card); border: 1px solid var(--dl-border); border-radius: 10px;
+}
+.dl-pnum {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 26px; height: 26px; border-radius: 50%; font-weight: 700; font-size: 0.85rem;
+  background: var(--dl-page); color: var(--dl-gray); border: 1px solid var(--dl-border);
+}
+.dl-plabel { display: flex; flex-direction: column; font-weight: 600; color: var(--dl-text); line-height: 1.2; }
+.dl-plabel small { font-weight: 400; font-size: 0.75rem; color: var(--dl-gray); }
+.dl-pstep.dl-done .dl-pnum { background: var(--dl-green); color: #FFFFFF; border-color: var(--dl-green); }
+.dl-pstep.dl-current { border-color: var(--dl-accent); box-shadow: 0 0 0 1px var(--dl-accent); }
+.dl-pstep.dl-current .dl-pnum { background: var(--dl-accent); color: #FFFFFF; border-color: var(--dl-accent); }
+.dl-pstep.dl-todo .dl-plabel { color: var(--dl-gray); }
+
 /* Numbered step titles */
 .dl-step { display: flex; align-items: center; gap: 10px; margin: 0 0 2px 0; }
 .dl-step .dl-num {

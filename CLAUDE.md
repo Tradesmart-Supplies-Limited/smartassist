@@ -119,7 +119,7 @@ Things learned while building:
 - The Instructions box, its example chips, Apply/Discard and the "Active changes" panel were removed
   from `app.py`. The code below (`core\instructions.py`, `core\llm.py`, tests, benchmark) is kept so the
   box can be brought back. Without it, the hidden freight 1 / freight 2 / insurance prices can only be
-  changed in `core\clients\bms.py`. The header ticker still shows the assistant status.
+  changed in `core\clients\bms.py`. The header ticker no longer shows it.
 - What follows describes the assistant as it was built.
 - Files: `core\instructions.py` (schema, prompt, validation, truck/date lookup, limits, apply, log),
   `core\llm.py` (Ollama client; `OLLAMA_URL` and `MODEL` live only there), the box in `app.py`.
@@ -167,6 +167,10 @@ Things learned while building:
 - Status is always icon + word (`ui.STATUS`), never colour alone. Max content width 1320 px, no page
   scrolling sideways at 1366 px.
 - UI changes must never change logic, figures, widget keys or callbacks.
+- UI v1.6 (2026-10-20): progress tracker `ui.progress(progress_slot, steps_done)` under the client choice,
+  redrawn as each step completes (0-4); client radio shows each profile's `DESCRIPTION` as a caption;
+  the header ticker shows the active client, "Works offline" and the version (no Ollama status check
+  any more, so `app.py` no longer imports `core.llm`).
 - The Generate PDFs button (key `generate_pdfs`) uses the logo's cerulean #4CA8DC (`ui.COLORS["cerulean"]`,
   the one colour kept outside config.toml) with dark text (5.8:1). Do NOT put it in the theme's blueColor:
   that also colours the info boxes' text, which then fails contrast (3.7:1).

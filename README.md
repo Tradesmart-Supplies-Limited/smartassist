@@ -29,7 +29,10 @@ If step 3 says "running scripts is disabled", use this instead of steps 3-4:
 `.venv\Scripts\python -m streamlit run app.py`
 
 ## The screen
-- The navy band at the top shows whether the instruction assistant is **ready** or **offline**.
+- At the top, choose the client (BMS or GCK); each shows a one-line reminder of its rules.
+- The progress tracker under it shows where you are: Sample PDF, Loading-order Excel, Job details,
+  Generate. Done steps get a green tick; the next step is outlined in navy.
+- The small moving line under the navy band shows the active client and that DocuLoop works offline.
 - Each step is a card with a number. When a step is done, the number turns into a green tick and a
   one-line summary tells you what was used (file, sheet, date, prices).
 - The two tiles above Step 3 show how many trucks were found and how many are ready.

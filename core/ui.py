@@ -11,7 +11,7 @@ import tomllib
 
 import streamlit as st
 
-VERSION = "1.5"
+VERSION = "1.6"
 PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -31,6 +31,7 @@ COLORS = {
     "orange": THEME.get("orangeColor", "#985800"),
     "red": THEME.get("redColor", "#B42318"),
     "gray": THEME.get("grayColor", "#5A6676"),
+    "border": THEME.get("borderColor", "#D3DCE6"),
     "cerulean": "#4CA8DC",      # the Tradesmart logo's blue, for the Generate button only (see config.toml)
 }
 
@@ -83,10 +84,10 @@ def apply_style():
     st.html(f"<style>:root{{{variables}}}\n{css}</style>")
 
 
-def header(assistant_ok, model):
+def header(client_name):
     """The top: the navy band running into the logos, and a small status ticker under it."""
-    assistant = "✅ Assistant ready" if assistant_ok else "⛔ Assistant offline"
-    status = f"{assistant} · Model {html.escape(model)} · 🔒 Works offline"
+    status = (f"Client: {html.escape(client_name)} · 🔒 Works offline, nothing leaves this computer · "
+              f"DocuLoop v{VERSION}")
     st.markdown(
         '<div class="dl-top">'
         f'<div class="dl-header" style="color:{COLORS["accent"]}">{LOGO}<div>'
@@ -94,6 +95,21 @@ def header(assistant_ok, model):
         f'</div></div><div class="dl-logo-tile">{_logos()}</div></div>'
         f'<div class="dl-ticker" role="status"><span>{TICKER_TRUCK} {status}</span></div>',
         unsafe_allow_html=True)
+
+
+PROGRESS_STEPS = ["Sample PDF", "Loading-order Excel", "Job details", "Generate"]
+
+
+def progress(place, steps_done):
+    """The progress tracker under the header: done steps get a green tick, the next one is highlighted."""
+    items = []
+    for n, label in enumerate(PROGRESS_STEPS, start=1):
+        state = "done" if n <= steps_done else ("current" if n == steps_done + 1 else "todo")
+        mark = "✓" if state == "done" else str(n)
+        word = {"done": "Done", "current": "Next", "todo": "Waiting"}[state]   # never colour alone
+        items.append(f'<div class="dl-pstep dl-{state}"><span class="dl-pnum">{mark}</span>'
+                     f'<span class="dl-plabel">{label}<small>{word}</small></span></div>')
+    place.markdown(f'<div class="dl-progress" role="list">{"".join(items)}</div>', unsafe_allow_html=True)
 
 
 def step_header(place, number, title, done=False, summary=""):
