@@ -1,5 +1,5 @@
 # Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
-"""Small helpers for DocuLoop's look. UI only: nothing here changes a figure or a document.
+"""Small helpers for SmartAssist's look. UI only: nothing here changes a figure or a document.
 
 All colours come from the [theme] block of .streamlit/config.toml (the one place to change them).
 Everything is local: system fonts, inline SVG and Streamlit's own bundled icons.
@@ -70,7 +70,7 @@ def _logos():
 
 def splash():
     """The opening screen: the logo beats twice, then the screen fades away to the app."""
-    st.markdown(f'<div class="dl-splash" aria-hidden="true">{_logos()}<div class="dl-splash-name">DocuLoop</div></div>',
+    st.markdown(f'<div class="dl-splash" aria-hidden="true">{_logos()}<div class="dl-splash-name">SmartAssist</div></div>',
                 unsafe_allow_html=True)
 
 
@@ -82,7 +82,7 @@ def apply_style():
     st.html(f"<style>:root{{{variables}}}\n{css}</style>")
 
 
-TITLE = "DocuLoop"
+TITLE = "SmartAssist"
 TAGLINE = "Road manifest, commercial invoice and packing list from your Excel sheet"
 
 
@@ -91,8 +91,8 @@ def header(client_name):
     name = html.escape(client_name)
     st.markdown(
         '<div class="dl-topbar"><div class="dl-brand">'
-        # Clicking the logo reloads DocuLoop from the start (a fresh page, like the browser's reload button).
-        f'<a class="dl-mark" href="./" target="_self" title="Reload DocuLoop" aria-label="Reload DocuLoop">{_logos()}</a>'
+        # Clicking the logo reloads SmartAssist from the start (a fresh page, like the browser's reload button).
+        f'<a class="dl-mark" href="./" target="_self" title="Reload SmartAssist" aria-label="Reload SmartAssist">{_logos()}</a>'
         f'<div class="dl-brand-name">{TITLE}</div></div>'
         '<div class="dl-chips" role="status">'
         f'<span class="dl-chip dl-chip-blue">{_icon("building")} Client: {name}</span>'
@@ -107,7 +107,7 @@ PROGRESS_STEPS = ["Sample PDF", "Loading-order Excel", "Job details", "Generate"
 
 
 def _hero(place, steps_done):
-    """The blue hero: where the manager is now and what DocuLoop makes."""
+    """The blue hero: where the manager is now and what SmartAssist makes."""
     name = html.escape(st.session_state.get("_dl_client_name", ""))
     current = [f"{name} sample PDF", f"{name} loading-order Excel", "Job details", "Generate"]
     if steps_done < len(current):
@@ -158,5 +158,5 @@ def status_of(text):
 
 def footer():
     st.markdown(f'<div class="dl-footer">© 2026 Tradesmart Supplies Limited. All rights reserved.<br>'
-                f'Developed by Tradesmart Supplies Limited · DocuLoop v{VERSION} · '
+                f'Developed by Tradesmart Supplies Limited · SmartAssist v{VERSION} · '
                 'Works within the Tradesmart Supplies Limited Network</div>', unsafe_allow_html=True)

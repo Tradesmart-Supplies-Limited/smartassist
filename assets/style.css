@@ -1,5 +1,5 @@
 /* Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde. */
-/* DocuLoop look (v1.8, from the Figma design "DocuLoop UI", 2026-10-20). Colours come from the --dl-*
+/* SmartAssist look (v1.8, from the Figma design "DocuLoop UI", 2026-10-20). Colours come from the --dl-*
    variables, which core/ui.py fills in from the [theme] block of .streamlit/config.toml.
    Only stable data-testid selectors are used. Never write a less-than sign in this file:
    the page would drop the whole style (tests/test_style.py checks this). */
@@ -41,7 +41,7 @@
 .dl-chip-green { background: var(--dl-green-soft); color: var(--dl-green); }
 .dl-chip-gray { background: var(--dl-surface); color: var(--dl-gray); }
 
-/* ---------- Blue hero: the current step, the name and what DocuLoop makes ---------- */
+/* ---------- Blue hero: the current step, the name and what SmartAssist makes ---------- */
 .dl-hero {
   display: flex; align-items: center; gap: 20px; padding: 24px; border-radius: 24px; color: #FFFFFF;
   background: linear-gradient(90deg, var(--dl-accent) 0%, var(--dl-accent2) 100%);

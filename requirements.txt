@@ -1,4 +1,4 @@
-# The exact versions DocuLoop is tested with (install: .venv\Scripts\python -m pip install -r requirements.txt)
+# The exact versions SmartAssist is tested with (install: .venv\Scripts\python -m pip install -r requirements.txt)
 # Checked 2026-10-20: kept on these versions on purpose (newer ones exist, e.g. PyMuPDF 2.0, but are not tested).
 streamlit==1.65.0     # the screen in the browser
 pandas==3.0.6         # reads the loading-order Excel into a table

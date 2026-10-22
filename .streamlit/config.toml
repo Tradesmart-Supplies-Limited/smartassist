@@ -1,4 +1,4 @@
-# DocuLoop sends nothing to the internet: no usage statistics.
+# SmartAssist sends nothing to the internet: no usage statistics.
 [browser]
 gatherUsageStats = false
 
@@ -6,7 +6,7 @@ gatherUsageStats = false
 toolbarMode = "minimal"
 showErrorDetails = "none"      # never show technical error details to the manager
 
-# ---- ALL DocuLoop colours live here (core/ui.py reads this block for its own CSS too) ----
+# ---- ALL SmartAssist colours live here (core/ui.py reads this block for its own CSS too) ----
 # Change primaryColor to change the accent everywhere. Every text colour below keeps a
 # contrast of at least 4.5:1 on the page, card and surface backgrounds.
 [theme]

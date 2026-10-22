@@ -1,5 +1,5 @@
 # Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
-"""DocuLoop: one 3-page PDF per truck, made from a client's sample PDF and loading-order Excel."""
+"""SmartAssist: one 3-page PDF per truck, made from a client's sample PDF and loading-order Excel."""
 import hashlib
 import io
 import os
@@ -25,7 +25,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ERROR_LOG = os.path.join(HERE, "output", "error_log.txt")
 
 # The browser-tab icon: a truck in the Tradesmart logo's blue and green (assets/favicon.png).
-st.set_page_config(page_title="DocuLoop", page_icon=os.path.join(HERE, "assets", "favicon.png"), layout="wide")
+st.set_page_config(page_title="SmartAssist", page_icon=os.path.join(HERE, "assets", "favicon.png"), layout="wide")
 ui.apply_style()
 
 # The opening screen with the beating logo, once per visit (not on every click).
@@ -110,7 +110,7 @@ client = get_client(st.session_state.active_client)
 upload_round = st.session_state.get("upload_round", 0)
 round_suffix = "" if upload_round == 0 else f"_{upload_round}"
 if not client.READY:
-    st.info(f"{client.NAME} is not set up yet: DocuLoop is waiting for a {client.NAME} sample PDF and "
+    st.info(f"{client.NAME} is not set up yet: SmartAssist is waiting for a {client.NAME} sample PDF and "
             f"loading-order Excel to learn its layout. Choose another client to work now.",
             icon=":material/construction:")
     st.stop()
@@ -588,7 +588,7 @@ with st.container(border=True):
                             {values["invoice_no"]: report for _name, values in results["jobs"]}, include,
                             f"{client.NAME}_")
         st.download_button(f"Download ZIP: {include}", batch,
-                           file_name=f"DocuLoop_{client.NAME}_{results['date']}_with_inspection.zip",
+                           file_name=f"SmartAssist_{client.NAME}_{results['date']}_with_inspection.zip",
                            mime="application/zip", key="download_inspection_zip", type="primary",
                            icon=":material/download:")
         with st.expander("Download per truck (documents or combined)", icon=":material/description:"):
