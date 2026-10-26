@@ -1,0 +1,32 @@
+# SmartAssist sends nothing to the internet: no usage statistics.
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = "none"      # never show technical error details to the manager
+
+# ---- ALL SmartAssist colours live here (core/ui.py reads this block for its own CSS too) ----
+# Change primaryColor to change the accent everywhere. Every text colour below keeps a
+# contrast of at least 4.5:1 on the page, card and surface backgrounds.
+[theme]
+base = "light"
+primaryColor = "#2563EB"              # accent: bright blue (white text on it 5.2:1)
+backgroundColor = "#F7FAFF"           # page
+secondaryBackgroundColor = "#F1F5F9"  # inputs, table headers
+textColor = "#0F172A"
+linkColor = "#1D4ED8"
+borderColor = "#E2E8F0"
+dataframeBorderColor = "#E2E8F0"
+greenColor = "#15803D"                # ready
+orangeColor = "#985800"               # warning / needs attention
+redColor = "#B42318"                  # error
+grayColor = "#475569"                 # excluded / secondary text
+blueColor = "#1D4ED8"
+# The Tradesmart logo's cerulean (#4CA8DC) is used only as the Generate button's background, with dark
+# text on it (5.8:1). It is set in core/ui.py, because Streamlit's own blueColor also colours the info
+# boxes' text, which would then be too light to read.
+font = "Segoe UI Variable Text, Segoe UI, Arial, sans-serif"   # Windows 11 system fonts, nothing downloaded
+headingFont = "Segoe UI Variable Display, Segoe UI, Arial, sans-serif"
+baseRadius = "12px"
+showWidgetBorder = true

@@ -1,0 +1,12 @@
+# Client data: never commit
+samples/
+output/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Streamlit local settings
+.streamlit/secrets.toml
