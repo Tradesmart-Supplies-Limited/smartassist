@@ -1,0 +1,3 @@
+# Only for making the installer (packaging\build_installer.bat), never needed to run SmartAssist.
+# Install: .venv\Scripts\python -m pip install -r requirements-build.txt   (Inno Setup 6 is installed separately)
+pyinstaller==6.22.3

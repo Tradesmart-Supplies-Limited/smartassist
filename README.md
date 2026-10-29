@@ -13,6 +13,33 @@ the Excel or calculated by the program.
 Double-click **start_smartassist.bat**. A black window opens, then your browser shows SmartAssist.
 Keep the black window open while you work. Close it when you have finished.
 
+## Desktop version (SmartAssist 2.0, a normal Windows program)
+SmartAssist also exists as a desktop window: the same steps, the same checks and **exactly the same
+PDFs**, without a browser. It is installed with one file and needs no Python and no internet.
+
+**Installing it on a laptop (once):**
+1. Copy `SmartAssist_Setup_2.0.exe` to the laptop (USB stick, shared folder or email link) and
+   double-click it.
+2. If Windows says "Windows protected your PC": click **More info → Run anyway** (the program is not
+   digitally signed).
+3. Tick "Put a SmartAssist icon on the desktop" if you want it, then **Next → Install → Finish**.
+   No administrator password is needed.
+4. Open SmartAssist and choose the BMS and GCK inspection reports once on that laptop.
+
+**Every day:** double-click the SmartAssist icon. Choose the files with the "Choose file…" buttons;
+downloads are saved with "Save ZIP" or "Documents" / "Combined", into the folder you pick
+(Downloads by default). Clicking the logo starts again from the beginning.
+
+**Updating:** run the new `SmartAssist_Setup_x.x.exe` over the old one. The saved inspection reports
+stay (they are kept in `%LOCALAPPDATA%\SmartAssist`). **Removing:** Windows Settings → Apps →
+SmartAssist → Uninstall.
+
+**Making the installer (only on the PC with the project):** double-click
+`packaging\build_installer.bat`. It runs the checks, packs SmartAssist with its own Python
+(PyInstaller), checks the packed program and makes `dist\SmartAssist_Setup_2.0.exe` (Inno Setup 6
+must be installed on that PC). To try the window without installing:
+`.venv\Scripts\python desktop_app.py`.
+
 ## Start from VS Code (instead of the .bat file)
 1. **File → Open Folder** → choose the SmartAssist folder.
 2. **Terminal → New Terminal**.
