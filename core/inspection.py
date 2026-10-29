@@ -2,7 +2,7 @@
 """Optional inspection reports: match one PDF per truck, combine, and pack into a ZIP.
 
 Reports are never changed: their pages are copied as they are, after the truck's 3 pages.
-Nothing here uses Streamlit, so it can be tested on its own.
+Nothing here draws on screen, so it can be tested on its own.
 """
 import io
 import os
