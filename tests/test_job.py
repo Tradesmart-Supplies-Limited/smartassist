@@ -1,6 +1,7 @@
 # Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """The step-by-step job behind the desktop window, with invented data only."""
 import io
+import zipfile
 from datetime import date
 from decimal import Decimal
 
@@ -146,6 +147,8 @@ def test_inspection_report_is_kept_replaced_and_removed(data_dir):
     assert name == "BMS_YS-TEST-001_with_inspection.pdf"
     assert pymupdf.open(stream=combined, filetype="pdf").page_count == 5     # 3 documents + 2 report pages
     assert job.zip_name().startswith("SmartAssist_BMS_") and job.zip_with_inspection()[:2] == b"PK"
+    names = zipfile.ZipFile(io.BytesIO(job.zip_with_inspection())).namelist()
+    assert names == ["BMS_YS-TEST-001_with_inspection.pdf", "BMS_YS-TEST-002_with_inspection.pdf"]   # no folders
     job.remove_report()
     assert job.report() is None
 

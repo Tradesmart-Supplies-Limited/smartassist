@@ -8,4 +8,4 @@ with open(resource("assets", "theme.toml"), "rb") as _f:
     COLORS = tomllib.load(_f)["colors"]
 
 FONT = "Segoe UI"                 # Windows' own font: nothing to download or install
-VERSION = "2.0"                   # 2.0 = the desktop (Tkinter) version
+VERSION = "2.1"                   # 2.0 = the desktop (Tkinter) version; 2.1 = ZIP without folders

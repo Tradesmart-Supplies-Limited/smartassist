@@ -1,6 +1,6 @@
 @echo off
 rem Copyright (c) 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
-rem Makes dist\SmartAssist_Setup_2.0.exe: the installer to give to colleagues. Run it from this folder.
+rem Makes dist\SmartAssist_Setup_<version>.exe (version in installer.iss and core\theme.py): the installer to give to colleagues. Run it from this folder.
 rem Needs (on this PC only): PyInstaller in .venv and Inno Setup 6. Colleagues need nothing.
 cd /d "%~dp0\.."
 
@@ -25,5 +25,5 @@ if not exist "%ISCC%" (echo Inno Setup 6 is not installed. & pause & exit /b 1)
 if errorlevel 1 (echo The installer could not be made. & pause & exit /b 1)
 
 echo.
-echo Done: dist\SmartAssist_Setup_2.0.exe
+echo Done: the installer is in the dist folder (SmartAssist_Setup_<version>.exe).
 pause

@@ -95,7 +95,7 @@ def safe_name(invoice_no):
 
 
 def build_zip(results, reports, mode, prefix=""):
-    """One folder per truck, named by invoice number, with the files for the chosen mode.
+    """All PDFs directly in the ZIP, no folders (owner's request, 2026-10-29): one file per truck.
 
     results: the app's generated results ({"files": [(name, bytes)], "jobs": [(name, values)]}).
     reports: {invoice_no: report bytes}. A truck without a report gets its documents only.
@@ -105,10 +105,10 @@ def build_zip(results, reports, mode, prefix=""):
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
         for (file_name, documents), (_name, values) in zip(results["files"], results["jobs"]):
             invoice_no = values["invoice_no"]
-            folder = safe_name(invoice_no)
+            name = safe_name(invoice_no)       # file names carry the invoice no., which is never used twice
             report = reports.get(invoice_no)
             if mode == MODE_COMBINED and report:
-                archive.writestr(f"{folder}/{prefix}{folder}_with_inspection.pdf", combine(documents, report))
+                archive.writestr(f"{prefix}{name}_with_inspection.pdf", combine(documents, report))
                 continue
-            archive.writestr(f"{folder}/{file_name}", documents)
+            archive.writestr(file_name, documents)
     return buffer.getvalue()

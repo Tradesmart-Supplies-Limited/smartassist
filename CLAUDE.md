@@ -137,7 +137,7 @@ Things learned while building:
   at `output\inspection_report.pdf` (git-ignored) until the manager replaces or removes it. This
   replaced the earlier one-report-per-truck upload and matching.
 - `core\inspection.py` (no Streamlit): `validate_report`, `combine` (3 pages then the report, pages
-  copied unchanged, no font subsetting on them), `build_zip` (one folder per truck; modes "Documents
+  copied unchanged, no font subsetting on them), `build_zip` (all PDFs directly in the ZIP, no folders since v2.1, owner 2026-10-29; modes "Documents
   only" and "Combined single PDF per truck"). `match_reports` is still there and tested, but the app
   no longer uses it.
 - `core\job.py`: `save_report` / `remove_report` / `report_info`; reports live in `data_dir()` as
@@ -171,7 +171,7 @@ Things learned while building:
   `resource()` finds assets inside the .exe. Tests: `tests\test_job.py` (invented data).
 - `desktop_app.py`: the Tkinter window only (redraws from the Job's state on every change; Step 3
   typing is checked 0.5 s after the last key; Generate runs in a thread). Colours only from
-  `assets\theme.toml` via `core\theme.py` (VERSION "2.0"). Hidden test options: `SmartAssist.exe --check`
+  `assets\theme.toml` via `core\theme.py` (VERSION "2.1"; keep it equal to AppVersion in installer.iss). Hidden test options: `SmartAssist.exe --check`
   (writes SmartAssist_check.txt to %TEMP%) and `--build <bms|gck> <sample> <excel> <folder>`.
 - `packaging\`: `make_icon.py` (PNG-in-ICO, no Pillow), `smartassist.spec` (PyInstaller one-folder, excludes
   streamlit/pyarrow), `installer.iss` (per-user install, no admin), `build_installer.bat` (tests -> icon ->
