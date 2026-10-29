@@ -84,8 +84,8 @@ def document_values(truck, tonnage, packages, date_text, prices, freight1, freig
     """Every text that goes into one truck's PDF, as {key: text}.
 
     agent: the clearance agent ({"name", "mobile"}), only for clients whose agent follows the exit border
-    (client.AGENTS, e.g. BMS). If not given, it follows the truck's border; a border without a known agent
-    must be confirmed by the manager first (the app asks). Clients without AGENTS (e.g. GCK) keep the
+    (a non-empty client.AGENTS). If not given, it follows the truck's border; a border without a known agent
+    must be confirmed by the manager first. Clients without AGENTS (BMS since 2026-10-29, and GCK) keep the
     agent exactly as their sample shows it.
     """
     if client.AGENTS:
@@ -159,32 +159,55 @@ def _span_at(spans, x, y, align):
 def load_template(pdf_bytes, client):
     """Check the sample and prepare it for filling. Raises LayoutError if it does not match.
 
+    A client may have several looks (client.LAYOUTS, e.g. BMS "A4" and "US Letter"). The sample is checked
+    against each one and the look it matches is used, so the PDFs always copy the sample's own look.
+
     Returns a dict with:
       base   - a 3-page PDF (bytes) with the per-truck texts removed
       spots  - where and how to write each value
       sample - the values the sample itself shows, {key: text}
+      layout - the name of the look the sample matched
     """
     try:
         source = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     except Exception:
         raise LayoutError("This file cannot be opened as a PDF. Check that it is a finished truck PDF "
                           "and upload it again.")
-    layout = client                      # the client's fields table and formats
     if not client.READY:
         raise LayoutError(f"{client.NAME} is not set up yet, so its sample cannot be read.")
-    if len(source) < layout.PAGES:
-        raise LayoutError(f"The sample must have at least {layout.PAGES} pages, this PDF has {len(source)}.")
+    if len(source) < client.PAGES:
+        raise LayoutError(f"The sample must have at least {client.PAGES} pages, this PDF has {len(source)}.")
 
+    layouts = getattr(client, "LAYOUTS", None) or {"standard": client.SPOTS}
+    attempts = []
+    for name, spot_list in layouts.items():
+        problems, template = _read_sample(source, client, spot_list)
+        if not problems:
+            template["layout"] = name
+            return template
+        attempts.append((len(problems), name, problems))
+    # No look matched: show the problems of the closest one.
+    _count, name, problems = min(attempts)
+    which = f" (closest: the {name} look)" if len(layouts) > 1 else ""
+    raise LayoutError(f"This PDF does not match the expected sample{which}:\n- " + "\n- ".join(problems))
+
+
+def _read_sample(source, client, spot_list):
+    """Read the sample with one fields table. Returns (problems, template); template is None on problems."""
     # Copy pages 1-3 into a NEW file, so the inspection photos are left behind.
     base = pymupdf.open()
-    base.insert_pdf(source, from_page=0, to_page=layout.PAGES - 1)
+    base.insert_pdf(source, from_page=0, to_page=client.PAGES - 1)
+    # Marks someone added on top of the sample (e.g. yellow highlights) are not part of the documents.
+    for page in base:
+        for annot in list(page.annots()):
+            page.delete_annot(annot)
 
     spots, sample, problems = [], {}, []
-    for page_no, title in enumerate(layout.TITLES):
+    for page_no, title in enumerate(client.TITLES):
         if title not in " ".join(base[page_no].get_text().split()):
             problems.append(f"page {page_no + 1}: the title '{title}' is missing")
     spans_by_page = [_page_spans(page) for page in base]
-    for page_no, x, y, key, align in layout.SPOTS:
+    for page_no, x, y, key, align in spot_list:
         page = base[page_no]
         span = _span_at(spans_by_page[page_no], x, y, align)
         where = f"page {page_no + 1}, {key}"
@@ -192,8 +215,8 @@ def load_template(pdf_bytes, client):
             problems.append(f"{where}: nothing found at the expected place")
             continue
         text = span["text"].strip()
-        if key in layout.FORMATS and not re.fullmatch(layout.FORMATS[key], text):
-            example = layout.SAMPLE_VALUES.get(key, "")
+        if key in client.FORMATS and not re.fullmatch(client.FORMATS[key], text):
+            example = client.SAMPLE_VALUES.get(key, "")
             problems.append(f"{where}: found '{text}', which is not in the expected format (like '{example}')")
             continue
         if key in sample and text != sample[key]:
@@ -223,11 +246,11 @@ def load_template(pdf_bytes, client):
         page.add_redact_annot(pymupdf.Rect(x0 + 0.2, middle - 1, x1 - 0.2, middle + 1), fill=False)
 
     if problems:
-        raise LayoutError("This PDF does not match the expected sample:\n- " + "\n- ".join(problems))
-
+        return problems, None
     for page in base:
         page.apply_redactions(images=0, graphics=0)   # 0 = leave pictures and lines alone
-    return {"base": base.tobytes(garbage=4, deflate=True), "spots": spots, "sample": sample, "client": client.ID}
+    return [], {"base": base.tobytes(garbage=4, deflate=True), "spots": spots, "sample": sample,
+                "client": client.ID}
 
 
 # ---------- writing one truck ----------

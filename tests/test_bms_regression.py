@@ -3,6 +3,8 @@
 
 bms_reference.json was made with the old code (main 7e24cb2): every word and its position for 4 invented
 trucks. The same trucks are built now and compared word by word, position by position.
+Updated once on 2026-10-29 for the owner's new rule "the DRC clearance agent stays as the sample shows it":
+checked before updating that only the agent lines (Contact person / Mobile) differed.
 """
 import glob
 import json

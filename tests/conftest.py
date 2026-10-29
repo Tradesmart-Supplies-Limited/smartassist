@@ -19,12 +19,13 @@ PRETEND = {"driver": "TEST DRIVER", "passport": "XX000000", "horse": "AAA111ZM",
            "trailer1": "BBB222ZM", "trailer2": "NIL"}
 
 
-def make_pretend_sample(changes=None):
+def make_pretend_sample(changes=None, spots=None, size=(842, 595)):
     """A 3-page PDF with the sample's texts at the sample's spots, plus one junk page 4.
-    `changes` replaces some texts, e.g. {"driver": "ANOTHER NAME"}, to pretend another truck."""
+    `changes` replaces some texts, e.g. {"driver": "ANOTHER NAME"}, to pretend another truck.
+    `spots` and `size` pick another look, e.g. layout.SPOTS_LETTER and (792, 612) for BMS US Letter."""
     doc = pymupdf.open()
     for _ in range(4):
-        doc.new_page(width=842, height=595)
+        doc.new_page(width=size[0], height=size[1])
     # Measure how far the middle of a text's box sits above its baseline.
     probe = doc[3]
     probe.insert_text((50, 50), "Inspection photo", fontsize=10)
@@ -33,7 +34,7 @@ def make_pretend_sample(changes=None):
     for page_no, title in enumerate(layout.TITLES):
         doc[page_no].insert_text((300, 40), title, fontsize=14)
 
-    for page_no, x, y, key, align in layout.SPOTS:
+    for page_no, x, y, key, align in spots or layout.SPOTS:
         page = doc[page_no]
         text = (changes or {}).get(key) or layout.SAMPLE_VALUES.get(key) or PRETEND[key]
         # x is the middle of the text (or its end for "right"), y the middle of its height.

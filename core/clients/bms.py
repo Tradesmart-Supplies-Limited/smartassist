@@ -18,7 +18,7 @@ from decimal import Decimal
 
 ID = "bms"
 NAME = "BMS"
-DESCRIPTION = "Kitwe → BMS · 40.00 MT and 40 packages per truck · agent by border"
+DESCRIPTION = "Kitwe → BMS · 40.00 MT and 40 packages per truck · prices and agent as the sample shows"
 READY = True            # this profile is complete and can build documents
 
 # ---- recognition (from file CONTENT only, never from file names) ----
@@ -53,6 +53,7 @@ PAGE_NAMES = ["Manifest", "Invoice", "Packing list"]
 
 PAGES = 3   # only pages 1-3 of the sample are used; the inspection report is never copied
 
+# The BMS look up to October 2026 (A4 pages, e.g. YS-BMS10-288).
 SPOTS = [
     # ---- Page 1: ROAD MANIFEST ----
     (0, 168.3, 165.3, "invoice_no", "centre"),      # manifest no.
@@ -66,8 +67,7 @@ SPOTS = [
     (0, 455.2, 403.3, "trailer2", "centre"),
     (0, 620.9, 403.3, "driver", "centre"),
     (0, 739.7, 403.3, "passport", "centre"),
-    (0, 661.4, 314.3, "agent_contact", "centre"),   # DRC clearance agent, chosen by exit border
-    (0, 661.4, 326.4, "agent_mobile", "centre"),
+    # The DRC clearance agent is not a spot: it stays exactly as the sample shows it (owner, 2026-10-29).
     # ---- Page 2: COMMERCIAL INVOICE ----
     (1, 351.2, 216.0, "date", "centre"),
     (1, 654.1, 216.0, "invoice_no", "centre"),
@@ -108,6 +108,61 @@ SPOTS = [
     (2, 704.8, 371.2, "weight", "centre"),          # gross weight
 ]
 
+# The newer BMS look (US-Letter pages, e.g. YS-BMS09-003, received 2026-10-29): the boxes moved, the invoice
+# and packing list have no top row, and the packing list shows the border ("Border of Entry").
+SPOTS_LETTER = [
+    # ---- Page 1: ROAD MANIFEST ----
+    (0, 161.2, 166.1, "invoice_no", "centre"),      # manifest no.
+    (0, 310.7, 166.1, "invoice_no", "centre"),      # file ref
+    (0, 631.5, 166.1, "date", "centre"),            # loaded date
+    (0, 160.8, 280.4, "packages", "centre"),
+    (0, 235.3, 280.1, "quantity", "centre"),
+    (0, 161.1, 407.4, "border", "centre"),
+    (0, 235.3, 407.1, "horse", "centre"),
+    (0, 310.7, 407.1, "trailer1", "centre"),
+    (0, 437.6, 407.1, "trailer2", "centre"),
+    (0, 594.7, 407.6, "driver", "centre"),
+    (0, 700.4, 407.3, "passport", "centre"),
+    # ---- Page 2: COMMERCIAL INVOICE ----
+    (1, 347.6, 216.3, "date", "centre"),
+    (1, 645.9, 216.3, "invoice_no", "centre"),
+    (1, 347.6, 302.9, "driver", "centre"),          # truck-detail row
+    (1, 450.9, 302.7, "horse", "centre"),
+    (1, 524.8, 302.7, "trailer1", "centre"),
+    (1, 645.9, 302.7, "trailer2", "centre"),
+    (1, 347.6, 346.2, "bags", "centre"),
+    (1, 450.7, 346.2, "quantity", "centre"),        # coal line
+    (1, 523.2, 346.3, "price_coal", "centre"),
+    (1, 642.5, 346.3, "amount_coal", "centre"),
+    (1, 168.4, 367.1, "freight1_text", "centre"),   # freight line 1
+    (1, 450.8, 367.8, "quantity", "centre"),
+    (1, 523.2, 367.9, "price_freight1", "centre"),
+    (1, 642.5, 367.9, "amount_freight1", "centre"),
+    (1, 168.3, 388.7, "freight2_text", "centre"),   # freight line 2
+    (1, 450.8, 389.4, "quantity", "centre"),
+    (1, 524.7, 389.4, "price_freight2", "centre"),
+    (1, 644.5, 389.4, "amount_freight2", "centre"),
+    (1, 450.8, 411.0, "quantity", "centre"),        # insurance line
+    (1, 524.7, 411.0, "price_insurance", "centre"),
+    (1, 644.6, 411.0, "amount_insurance", "centre"),
+    (1, 642.4, 432.7, "total", "centre"),
+    # ---- Page 3: PACKING LIST ----
+    (2, 337.8, 211.1, "date", "centre"),
+    (2, 652.7, 211.1, "invoice_no", "centre"),
+    (2, 437.4, 232.4, "border", "centre"),          # Border of Entry
+    (2, 337.9, 316.9, "driver", "centre"),          # truck-detail row
+    (2, 437.3, 316.7, "horse", "centre"),
+    (2, 526.6, 316.7, "trailer1", "centre"),
+    (2, 652.6, 316.7, "trailer2", "centre"),
+    (2, 394.3, 359.1, "packages", "right"),         # sits against the fixed word BAGS
+    (2, 526.6, 359.1, "weight", "centre"),          # net weight
+    (2, 652.8, 359.1, "weight", "centre"),          # gross weight
+]
+
+# Every BMS look SmartAssist accepts. The uploaded sample is matched against each one, and the PDFs copy
+# exactly the look of the sample (owner's request, 2026-10-29: "follow the sample posted each time").
+LAYOUTS = {"A4": SPOTS, "US Letter": SPOTS_LETTER}
+
 # What the reference sample (YS-BMS10-288) shows at those spots: used as the example in error
 # messages and by the tests. Any truck's PDF of this format is accepted as the sample, as long as
 # every spot holds a text in the right FORMAT (below) and repeated values agree everywhere.
@@ -131,17 +186,17 @@ SAMPLE_VALUES = {
     "amount_insurance": "$80.00",
     "total": "$12,000.00",
     "weight": "40MT",
-    "agent_contact": "Contact person :Pacafic",
-    "agent_mobile": "Mobile :+243 995 527 463",
 }
 
-# DRC clearance agent per exit border (border written in capitals, as in the Excel).
-# These two business contacts are allowed in git on the owner's request (2026-10-14).
-# A border not listed here must be confirmed by the manager in the app before its PDFs are made.
-AGENTS = {
-    "MOKAMBO": {"name": "Pacafic", "mobile": "+243 995 527 463"},
-    "SAKANIA": {"name": "Oscar Levite", "mobile": "+243 997 595 381"},
-}
+# DRC clearance agent: kept exactly as the uploaded sample shows it, for every truck (owner's request,
+# 2026-10-29). Until then it was chosen by exit border (MOKAMBO = Pacafic, SAKANIA = Oscar Levite); an
+# empty AGENTS means "do not replace the agent" (same as GCK).
+AGENTS = {}
+
+# Prices: read from the uploaded sample each time (owner's request, 2026-10-29), e.g. coal $65 and freight
+# line 1 $83 in YS-BMS09-003. Coal stays editable on screen. DEFAULT_PRICES below are only used until a
+# sample is read.
+PRICES_FROM_SAMPLE = True
 
 # This client's rule: every truck is printed at 40 MT (packages still come from the Excel).
 # The manager can switch to the Excel's own tonnage or to fixed figures in Step 3.
@@ -163,8 +218,6 @@ FORMATS = {
     "quantity": NUMBER + r" MT",
     "weight": NUMBER + r"MT",
     "total": MONEY,
-    "agent_contact": r"Contact person :.+",
-    "agent_mobile": r"Mobile :.+",
 }
 for _name in ("coal", "freight1", "freight2", "insurance"):
     FORMATS["price_" + _name] = MONEY
@@ -174,7 +227,7 @@ for _name in ("coal", "freight1", "freight2", "insurance"):
 # The fixed page titles that show it is this client's 3-page format.
 TITLES = ["ROAD MANIFEST", "COMMERCIAL INVOICE", "PACKING LIST"]
 
-# Default prices in USD per MT and default freight wording (all editable in the app).
+# Prices in USD per MT before a sample is read (then the sample's prices are used), and default freight wording.
 DEFAULT_PRICES = {
     "coal": Decimal("70"),
     "freight1": Decimal("88"),
