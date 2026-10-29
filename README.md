@@ -10,7 +10,7 @@ SmartAssist is a normal Windows program (a desktop window). It works on this com
 is sent to the internet, and every figure is copied from the Excel or calculated by the program.
 
 ## Installing it on a laptop (once)
-1. Copy the installer (for example `SmartAssist_Setup_2.1.exe`) to the laptop (shared folder, USB stick or a private link) and
+1. Copy the installer (for example `SmartAssist_Setup_2.2.exe`) to the laptop (shared folder, USB stick or a private link) and
    double-click it.
 2. If Windows says "Windows protected your PC": click **More info → Run anyway** (the program is not
    digitally signed).
@@ -45,7 +45,10 @@ the beginning (everything loaded is cleared; the saved inspection reports stay).
 At the top, choose the client: **BMS** or **GCK**. The steps then ask for that client's files,
 and the PDFs are named with the client, e.g. `BMS_YS-BMS10-288.pdf`. Changing the client clears the
 loaded files (SmartAssist asks first if PDFs were already made). Each client keeps its own rules:
-- **BMS:** always 40.00 MT and 40 packages; the clearance agent follows the exit border.
+- **BMS:** always 40.00 MT and 40 packages. The **prices** and the **DRC clearance agent** are taken from the
+  BMS sample you choose (for example coal $65, freight $83 / $140, insurance $2, agent Cargo Congo /
+  Benjamin). Both BMS looks are accepted: the older A4 one and the newer US-Letter one; the PDFs always copy
+  the look of the sample you chose.
 - **GCK:** tonnage and packages exactly as the Excel gives them (e.g. 43T = 43.00 MT); prices 40 / 120 / 145
   (coal / freight outside DRC / freight inside DRC, no insurance line); the clearance agent stays as the
   GCK sample shows it. Use GCK's own sample PDF and Excel, and GCK's inspection report.
@@ -63,8 +66,8 @@ If you choose an Excel as the sample PDF (or the other way round), it tells you 
 3. **Job details.**
    - Date on the documents (today unless you change it), typed as day/month/year and written like `12-Oct-26`.
    - Wording of the two freight lines.
-   - Coal price in USD per MT (70 unless you change it). The other prices are fixed and not shown:
-     freight line 1 88, freight line 2 140, insurance 2.
+   - Coal price in USD per MT. **BMS:** the four prices are read from the sample (Step 1 says which);
+     only coal is shown and you may change it. **GCK:** coal 40, freight 120 and 145 (fixed).
    - Quantities: for **BMS** every truck is always **40.00 MT and 40 packages**; there is nothing
      to choose. For **GCK** you choose where the tonnage and packages come from.
    - **Read the data check table.** "Ready" trucks are made. "Warning" trucks are made, but look at
@@ -86,17 +89,14 @@ The report itself is never changed: its pages are copied as they are. Without a 
 nothing to save, so keep each client's report saved.
 
 ## DRC clearance agent
-The agent on the road manifest follows each truck's EXIT BORDER in the Excel:
-- **Mokambo:** Contact person Pacafic, mobile +243 995 527 463
-- **Sakania:** Contact person Oscar Levite, mobile +243 997 595 381
-
-For any other border (or an empty one) SmartAssist asks you to choose the agent before it makes those
-trucks' PDFs; until you choose, they show "Waiting" in the data check. The "Clearance agent" column
-shows which agent each truck will get. To change an agent, edit `AGENTS` in `core\clients\bms.py`.
+The agent on the road manifest (company, contact person and mobile) is copied **exactly as the sample
+shows it**, for every truck and every border. To change the agent, choose a sample that shows the new
+agent. (Until October 2026 BMS chose the agent by exit border; that rule was replaced on the owner's
+request.)
 
 ## How the figures are worked out
 - Amount = quantity x price, rounded to cents. Total = the sum of the four amounts.
-- Example for 42 MT: 2,940.00 + 3,696.00 + 5,880.00 + 84.00 = 12,600.00.
+- Example for 40 MT at the sample's prices 65 / 83 / 140 / 2: 2,600.00 + 3,320.00 + 5,600.00 + 80.00 = 11,600.00.
 - BMS: every truck is 40.00 MT and 40 packages (40MT on the packing list), whatever the Excel says.
 - An empty or "N/A" second trailer is written as NIL.
 
@@ -108,7 +108,8 @@ invoice number used twice.
 The same horse used twice; empty passport number; empty exit border.
 
 ## If something goes wrong
-- **Red message at step 1:** the PDF is not a sample in this client's format.
+- **Red message at step 1:** the PDF is not a sample in this client's format (for BMS: neither the
+  A4 look nor the US-Letter look). The message lists what did not match.
 - **Changed a setting after generating:** click "Generate PDFs" again; a yellow message reminds you.
 - **Something failed with no clear reason:** the details are in `error_log.txt`, in
   `%LOCALAPPDATA%\SmartAssist` (installed program) or in `output\` (project folder).

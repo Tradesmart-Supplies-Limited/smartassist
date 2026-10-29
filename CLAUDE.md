@@ -63,10 +63,9 @@ Things learned while building:
 ## Fields replaced
 - Page 1: manifest no. and file ref (both = invoice no.), loaded date, package count, quantity "40.00 MT",
   exit border, horse, trailer 1, trailer 2 ("NIL" if none), driver, passport.
-  Also the DRC clearance agent's "Contact person :" and "Mobile :" lines, chosen by exit border
-  (`bms.AGENTS`: MOKAMBO = Pacafic +243 995 527 463, SAKANIA = Oscar Levite +243 997 595 381;
-  "MALABAR RDC" stays). Any other border: the app asks the manager to choose the agent; until then
-  those trucks wait and get no PDF. `document_values` refuses an unknown border without an agent.
+  The DRC clearance agent (company, contact person, mobile) is NOT replaced: it stays exactly as the uploaded
+  sample shows it (owner, 2026-10-29; `bms.AGENTS = {}`). Until then it was chosen by exit border
+  (MOKAMBO = Pacafic, SAKANIA = Oscar Levite, "MALABAR RDC" fixed).
 - Page 2: invoice date, invoice no.; top row horse, trailer 1, driver; truck-detail row driver, horse,
   trailer 1, trailer 2; bags "40.00"; four lines (coal, freight 1, freight 2, insurance) each with
   quantity "40.00 MT", price "$70.00", amount "$2,800.00"; total. Freight wording is editable
@@ -75,9 +74,10 @@ Things learned while building:
   packages "40" right-aligned against the fixed word BAGS; net and gross weight "40MT" ("42MT", "42.5MT").
 
 ## Rules
-- Prices USD/MT: coal 70, freight 1 88, freight 2 140, insurance 2. Only coal is shown and editable
-  in the UI (owner's request, 2026-10-14); the other three keep their defaults and, since the
-  Instructions box was removed (2026-10-15), can only be changed in `core\clients\bms.py`.
+- Prices USD/MT, BMS (owner's request, 2026-10-29): read from the uploaded sample each time
+  (`bms.PRICES_FROM_SAMPLE`, done in `Job.load_sample`), e.g. YS-BMS10-288: 70 / 88 / 140 / 2,
+  YS-BMS09-003: 65 / 83 / 140 / 2. Only coal is shown and editable in the window; the other three come from
+  the sample. `bms.DEFAULT_PRICES` (70/88/140/2) are only used before a sample is read. GCK: 40 / 120 / 145.
 - Amount = quantity x price with `Decimal`, `ROUND_HALF_UP`. Total = sum of the four amounts.
 - Quantities, BMS (owner's rule, 2026-10-16): figures NEVER change. Every BMS truck is 40.00 MT and
   40 packages (`bms.FIXED_TONNAGE`, `bms.FIXED_PACKAGES`); the app shows no quantity choice for BMS and
@@ -90,6 +90,13 @@ Things learned while building:
   skipped); duplicate horse, empty passport/border = warning.
 
 ## Clients (since 2026-10-15, branch multi-client)
+- BMS LOOKS (owner, 2026-10-29: "follow the sample posted each time, including how it should look"):
+  `bms.LAYOUTS = {"A4": SPOTS, "US Letter": SPOTS_LETTER}`. `load_template` tries each look and uses the one
+  the sample matches (`template["layout"]`); no match = the closest look's problems are listed. The US-Letter
+  look (from YS-BMS09-003, in OneDrive "PROJECT 1\BMS 2", not in the project) has no invoice / packing-list
+  top row and shows the border on the packing list ("Border of Entry"). Annotations on the sample (e.g. yellow
+  highlights) are deleted from the copied pages. Checked: YS-BMS09-003 rebuilds its own truck with identical
+  words on pages 1-3; amounts written in Arial sit about 3 pt left of the sample's own (other font).
 - `core\clients\bms.py` is the BMS profile: id, name, READY, PDF and Excel fingerprints, Excel FIELDS /
   OPTIONAL, PRICE_ITEMS (the client's invoice lines), PAGE_NAMES, and the fields table,
   formats, agents, client tonnage and default prices that used to be `core\layout.py`.
@@ -171,7 +178,7 @@ Things learned while building:
   `resource()` finds assets inside the .exe. Tests: `tests\test_job.py` (invented data).
 - `desktop_app.py`: the Tkinter window only (redraws from the Job's state on every change; Step 3
   typing is checked 0.5 s after the last key; Generate runs in a thread). Colours only from
-  `assets\theme.toml` via `core\theme.py` (VERSION "2.1"; keep it equal to AppVersion in installer.iss). Hidden test options: `SmartAssist.exe --check`
+  `assets\theme.toml` via `core\theme.py` (VERSION "2.2"; keep it equal to AppVersion in installer.iss). Hidden test options: `SmartAssist.exe --check`
   (writes SmartAssist_check.txt to %TEMP%) and `--build <bms|gck> <sample> <excel> <folder>`.
 - `packaging\`: `make_icon.py` (PNG-in-ICO, no Pillow), `smartassist.spec` (PyInstaller one-folder, excludes
   streamlit/pyarrow), `installer.iss` (per-user install, no admin), `build_installer.bat` (tests -> icon ->
@@ -192,8 +199,8 @@ Things learned while building:
   approved packages). Streamlit is still installed in `.venv\` but no longer used.
 - `samples\` and `output\` are git-ignored. Real driver names, passports and phone numbers must never
   appear in committed files or tests.
-  Exception (owner's decision, 2026-10-14): the two clearance agents' names and numbers in
-  `core\clients\bms.py` (`SAMPLE_VALUES` and `AGENTS`).
+  (Until 2026-10-29 `core\clients\bms.py` held the two clearance agents' names and numbers, allowed by the
+  owner; since the agent follows the sample they are no longer in the code, only in git history.)
 - Out of scope: other layouts than the clients' own, editable consignee/consignor.
 - Only make changes that were asked for. Plain, readable code with short comments (the owner is a beginner).
 

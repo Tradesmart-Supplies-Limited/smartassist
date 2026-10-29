@@ -102,12 +102,25 @@ def test_gck_figures_come_from_the_excel_or_are_fixed():
     assert (row["Tonnage"], row["Packages"]) == ("41.50", "30")
 
 
-def test_unknown_border_waits_until_an_agent_is_chosen():
-    job = ready_job([truck(1), truck(2, border="KASUMBALESA")])
-    check = job.check()
-    assert check.unknown_borders == ["KASUMBALESA"] and check.waiting == 1 and len(check.jobs) == 1
-    job.agent_choices["KASUMBALESA"] = next(iter(job.agent_options().values()))
-    assert len(job.check().jobs) == 2
+def test_bms_never_waits_for_an_agent_the_sample_gives_it():
+    # Owner's rule (2026-10-29): the agent stays as the sample shows it, whatever the exit border.
+    check = ready_job([truck(1), truck(2, border="KASUMBALESA")]).check()
+    assert check.unknown_borders == [] and check.waiting == 0 and len(check.jobs) == 2
+    assert check.rows[1]["Clearance agent"] == "as in the sample"
+
+
+def test_bms_prices_follow_the_uploaded_sample():
+    # Owner's rule (2026-10-29): prices are read from the sample (e.g. coal $65, freight 1 $83).
+    job = Job("bms")
+    sample = make_pretend_sample({"price_coal": "$65.00", "price_freight1": "$83.00"})
+    step = job.load_sample("sample.pdf", sample)
+    assert step.ok and "prices from the sample: $65.00 / $83.00 / $140.00 / $2.00" in step.summary
+    assert job.prices == {"coal": 65.0, "freight_1": 83.0, "freight_2": 140.0, "insurance": 2.0}
+    assert job.load_excel("order.xlsx", excel([truck(1)])).ok
+    values = job.check().jobs[0][1]
+    assert (values["price_coal"], values["total"]) == ("$65.00", "$11,600.00")       # 40 x (65+83+140+2)
+    job.prices["coal"] = 70.0                           # coal stays editable on screen
+    assert job.check().jobs[0][1]["total"] == "$11,800.00"
 
 
 def test_truck_with_errors_is_skipped():

@@ -9,7 +9,7 @@ import pytest
 
 from core.clients import bms as layout     # the BMS client profile
 from core.excel_reader import clean_sheet, detect_header_row, read_raw_sheets
-from core.pdf_builder import (LayoutError, agent_for_border, build_pdf, document_values,
+from core.pdf_builder import (LayoutError, build_pdf, document_values,
                               format_date, load_template, pymupdf)
 from core.trucks import Truck, check_trucks, guess_columns, read_trucks
 
@@ -127,22 +127,46 @@ def test_sixty_trucks_in_under_sixty_seconds(template, tmp_path):
         assert len(pdf) < 300_000
 
 
-def test_clearance_agent_follows_the_exit_border(template):
-    assert agent_for_border(" mokambo ", layout)["name"] == "Pacafic"
-    assert agent_for_border("SAKANIA", layout)["name"] == "Oscar Levite"
-    assert agent_for_border("KASUMBALESA", layout) is None
-    text = pymupdf.open(stream=build_pdf(template, values_for(TRUCK, "40")), filetype="pdf")[0].get_text()
-    assert "Contact person :Oscar Levite" in text and "Mobile :+243 997 595 381" in text
-    assert "Pacafic" not in text
+def test_clearance_agent_stays_as_the_sample_shows(template):
+    # Owner's rule (2026-10-29): the DRC clearance agent is copied from the sample, never replaced by border.
+    assert layout.AGENTS == {}
+    values = values_for(TRUCK, "40")                    # TRUCK's border is Sakania
+    assert "agent_contact" not in values and "agent_mobile" not in values
+    assert not any(spot["key"].startswith("agent") for spot in template["spots"])
+    sample_page1 = pymupdf.open(stream=template["base"], filetype="pdf")[0].get_text()
+    if "Contact person" not in sample_page1:
+        return                                          # the pretend sample has no agent text to compare
+    text = " ".join(pymupdf.open(stream=build_pdf(template, values), filetype="pdf")[0].get_text().split())
+    assert "Contact person :Pacafic" in text and "Oscar Levite" not in text   # what the real sample shows
 
 
-def test_unknown_border_needs_a_confirmed_agent():
-    other = Truck(row=6, invoice_no="XX-TEST-002", driver="JOHN TEST", horse="H", border="KASUMBALESA")
-    with pytest.raises(ValueError):
-        values_for(other, "40")
-    chosen = document_values(other, Decimal("40"), Decimal("40"), "12-Oct-26", layout.DEFAULT_PRICES,
-                             "a", "b", agent=layout.AGENTS["MOKAMBO"], client=layout)
-    assert chosen["agent_contact"] == "Contact person :Pacafic"
+def test_both_bms_looks_are_recognised():
+    from conftest import make_pretend_sample
+    a4 = load_template(make_pretend_sample(), layout)
+    letter = load_template(make_pretend_sample(spots=layout.SPOTS_LETTER, size=(792, 612)), layout)
+    assert (a4["layout"], letter["layout"]) == ("A4", "US Letter")
+    assert len(letter["spots"]) == len(layout.SPOTS_LETTER)
+    page3 = {spot["key"] for spot in letter["spots"] if spot["page"] == 2}
+    assert "border" in page3                            # the new look shows "Border of Entry" on the packing list
+
+
+def test_new_look_is_filled_and_keeps_its_own_layout():
+    from conftest import make_pretend_sample
+    letter = load_template(make_pretend_sample(spots=layout.SPOTS_LETTER, size=(792, 612)), layout)
+    doc = pymupdf.open(stream=build_pdf(letter, values_for(TRUCK, "40")), filetype="pdf")
+    assert len(doc) == 3 and doc[0].rect.width == 792
+    assert "XX-TEST-001" in doc[0].get_text() and "JOHN TEST" in doc[0].get_text()
+    assert "Sakania" in doc[0].get_text() and "Sakania" in doc[2].get_text()   # border also on the packing list
+    assert "XX-TEST-001" in doc[1].get_text() and "$12,000.00" in doc[1].get_text()
+
+
+def test_highlights_on_the_sample_are_not_copied():
+    from conftest import make_pretend_sample
+    marked = pymupdf.open(stream=make_pretend_sample(), filetype="pdf")
+    marked[0].add_highlight_annot(pymupdf.Rect(100, 100, 300, 120))
+    template = load_template(marked.tobytes(), layout)
+    doc = pymupdf.open(stream=build_pdf(template, values_for(TRUCK, "40")), filetype="pdf")
+    assert not any(list(page.annots()) for page in doc)
 
 
 def test_another_truck_of_the_same_format_is_accepted_as_sample():

@@ -141,8 +141,17 @@ class Job:
             log_error("reading the sample PDF")
             return Step(False, f"This file could not be read. Check that it is a {client.NAME} sample PDF.")
         self.template, self.sample_name, self.results = template, name, None
+        prices = ""
+        if getattr(client, "PRICES_FROM_SAMPLE", False):
+            # Follow the sample's own prices (BMS, owner's request 2026-10-29). Coal stays editable.
+            for item in client.PRICE_ITEMS:
+                text = template["sample"]["price_" + self.price_name(item)]
+                self.prices[item] = float(Decimal(text.replace("$", "").replace(",", "")))
+            prices = " · prices from the sample: " + " / ".join(
+                template["sample"]["price_" + self.price_name(item)] for item in client.PRICE_ITEMS)
+        look = f" · {template['layout']} look" if len(getattr(client, "LAYOUTS", {})) > 1 else ""
         return Step(True, summary=f"Sample recognised: {name} · all {len(template['spots'])} fields found on "
-                                  f"pages 1-3 (sample invoice {template['sample']['invoice_no']}). "
+                                  f"pages 1-3 (sample invoice {template['sample']['invoice_no']}){look}{prices}. "
                                   "Any later pages are ignored.")
 
     # ---------------- Step 2: Excel ----------------

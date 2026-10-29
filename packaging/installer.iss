@@ -3,7 +3,7 @@
 ; Run packaging\build_installer.bat, which does everything in the right order.
 
 #define AppName "SmartAssist"
-#define AppVersion "2.1"
+#define AppVersion "2.2"
 #define Publisher "Tradesmart Supplies Limited"
 
 [Setup]
