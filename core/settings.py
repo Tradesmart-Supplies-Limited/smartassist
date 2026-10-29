@@ -1,5 +1,5 @@
 # Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
-"""Names of the Step 3 settings the screen keeps in st.session_state, and their labels.
+"""Names of the Step 3 settings and the quantity-source texts.
 
 These used to live in core/instructions.py together with the typed-instructions assistant (Ollama),
 which was removed from the screen on 2026-10-15 and from the code on 2026-10-20.

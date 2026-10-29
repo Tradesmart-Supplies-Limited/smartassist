@@ -1,9 +1,9 @@
 # Copyright © 2026 Tradesmart Supplies Limited. All rights reserved. Developed by Maurille Khonde.
 """One SmartAssist job, step by step, without any screen code.
 
-The desktop window (desktop_app.py) only shows what this module decides. Every rule here is the
-same as in the browser version (app.py): the same checks, the same messages, the same figures and
-the same PDF builder, so both give identical documents.
+The desktop window (desktop_app.py) only shows what this module decides. The rules, checks and
+messages came from the former browser version (app.py, removed 2026-10-29); with the same PDF builder
+they were checked to give identical documents.
 """
 import io
 import os
@@ -100,10 +100,10 @@ class Job:
         self.excel_name = ""
         self.raw_sheets = {}
         self.sheet = None
-        self.header_row = 0                 # 0-based, like app.py
+        self.header_row = 0                 # 0-based (the window shows it + 1)
         self.mapping = {}
         self.results = None                 # {"files", "jobs", "date", "client"} after Generate
-        # Step 3 settings, with the same defaults as app.py
+        # Step 3 settings and their defaults
         self.doc_date = date.today()
         self.freight1 = self.client.DEFAULT_FREIGHT1
         self.freight2 = self.client.DEFAULT_FREIGHT2
@@ -168,7 +168,7 @@ class Job:
         return self.choose_sheet(next(iter(sheets)))
 
     def choose_sheet(self, sheet, confirmed_other_client=False):
-        """Use this sheet: find its title row and guess the columns, like app.py does."""
+        """Use this sheet: find its title row and guess the columns."""
         client = self.client
         raw = self.raw_sheets[sheet]
         self.sheet = None                   # set only once the sheet is accepted
@@ -240,7 +240,7 @@ class Job:
         return {f"{a['name']} ({a['mobile']}), as for {border.title()}": a for border, a in self.client.AGENTS.items()}
 
     def check(self):
-        """Read and check every truck, exactly as app.py's data check does."""
+        """Read and check every truck: the data check."""
         client = self.client
         table = self.table()
         trucks = read_trucks(table, self.mapping, self.header_row)

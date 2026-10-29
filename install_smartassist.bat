@@ -25,7 +25,7 @@ if errorlevel 1 (
 )
 
 echo Downloading the packages SmartAssist needs. This takes a few minutes...
-".venv\Scripts\python.exe" -m pip install --disable-pip-version-check streamlit==1.65.0 pandas==3.0.6 openpyxl==3.1.5 pymupdf==1.28.2 fonttools==4.66.1 pytest==9.1.1
+".venv\Scripts\python.exe" -m pip install --disable-pip-version-check pandas==3.0.6 openpyxl==3.1.5 pymupdf==1.28.2 fonttools==4.66.1 pytest==9.1.1
 if errorlevel 1 (
     echo.
     echo The download failed. Check the internet connection and run this file again.

@@ -14,7 +14,7 @@ a = Analysis(
         (os.path.join(PROJECT, "assets", "theme.toml"), "assets"),
     ],
     hiddenimports=["openpyxl"],            # pandas opens .xlsx files with openpyxl, found only at run time
-    # Not needed by the desktop window: the browser screen and the big optional extras of pandas.
+    # Not needed by the window (Streamlit may still be installed in .venv) nor the big optional extras of pandas.
     excludes=["streamlit", "pyarrow", "altair", "pydeck", "matplotlib", "IPython", "pytest", "scipy",
               "tornado", "watchdog", "git", "jinja2"],
 )

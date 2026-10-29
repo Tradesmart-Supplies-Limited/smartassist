@@ -3,17 +3,19 @@
 (Renamed from DocuLoop on 2026-10-22, owner's request; the project folder `C:\Projects\DocuLoop`, the
 GitHub repository and the Figma file keep the old name.)
 
-Local, offline Streamlit app for this company's clients (BMS; GCK prepared, see "Clients"). The manager uploads a sample PDF (the finished look)
+Local, offline Windows desktop program (Tkinter) for this company's clients (BMS; GCK prepared, see "Clients"). The manager uploads a sample PDF (the finished look)
 and the client's loading-order Excel. For every truck the app writes one 3-page PDF
 (road manifest, commercial invoice, packing list) that looks identical to the sample.
 One wrong number can delay an OGEFREM customs declaration, so correctness comes first.
 
 ## Environment
 - Windows, `C:\Projects\DocuLoop`, Python 3.12 in `.venv`, 8 GB RAM, no GPU, no internet at run time.
-- Allowed packages only: streamlit, pandas, openpyxl, pymupdf, fonttools, pytest. Ask before adding any other.
+- Allowed packages only: pandas, openpyxl, pymupdf, fonttools, pytest (Tkinter comes with Python).
+  Ask before adding any other. Streamlit was removed on 2026-10-29 (owner's request).
   Build-only (owner's OK, 2026-10-29): pyinstaller (`requirements-build.txt`) and Inno Setup 6 (installed for the
   user via winget) make the desktop installer; neither is needed to run SmartAssist.
-- Run the app: `start_smartassist.bat`. Run the tests: `.venv\Scripts\python -m pytest`.
+- Run the app: `start_smartassist.bat` (or `.venv\Scripts\python desktop_app.py`). Run the tests:
+  `.venv\Scripts\python -m pytest`. Make the installer: `packaging\build_installer.bat`.
 
 ## Inputs
 - `samples\` (read-only, git-ignored): the sample PDF (e.g. `YS-BMS10-288.pdf`) and the client Excel.
@@ -107,16 +109,16 @@ Things learned while building:
   `detect_client_from_excel` (content only, never file names), `pairing_problem`.
 - Core functions take the client: `load_template(bytes, client)`, `document_values(..., client=client)`,
   `agent_for_border(border, client)`, `guess_columns(columns, client)`, `read_order(..., client)`.
-- App: client radio at the top (session_state only). Switching clears sample, Excel, results and
-  settings (asks first if PDFs exist). A file recognised as another client blocks building until the
-  manager switches or ticks the confirm box. GCK shows "not set up yet" and stops.
+- Window: client cards at the top. Switching starts a new `Job` (clears sample, Excel, results and
+  settings; asks first if PDFs exist). A file recognised as another client asks: switch, use it anyway, or
+  cancel. A client with READY = False shows "not set up yet".
 - Names carry the client: `BMS_<invoice>.pdf`, `SmartAssist_BMS_<date>.zip`, combined
   `BMS_<invoice>_with_inspection.pdf`; the inspection report is
   kept per client as `output\inspection_report_BMS.pdf` (the older `output\inspection_report.pdf` is
   still used for BMS if present).
-- Uploads: file type is read from the first bytes, never the name; an Excel in the PDF box (or a PDF in
-  the Excel box) gets a "use the other box" message; any other problem is a plain message and the
-  details go to `output\error_log.txt`. `.streamlit\config.toml` has `showErrorDetails = "none"`.
+- Files: type is read from the first bytes, never the name; an Excel chosen as the sample (or a PDF as
+  the Excel) gets a "use the other step" message; any other problem is a plain message and the
+  details go to `error_log.txt` in `data_dir()`. Technical details are never shown in the window.
 - BMS regression: `tests\test_bms_regression.py` compares every word and position of 4 invented trucks
   with `tests\bms_reference.json`, made with the code before the change.
 
@@ -124,7 +126,8 @@ Things learned while building:
 - The Ollama-based Instructions box is gone completely: `core\instructions.py`, `core\llm.py`, their tests,
   the benchmark and `instruction_cases.json` were deleted on 2026-10-20 (still in git history), together
   with the "excluded by instruction" truck status and the clients' FREIGHT_LINES / EXAMPLES.
-  SmartAssist uses no AI and no Ollama. The Step 3 session_state key names now live in `core\settings.py`.
+  SmartAssist uses no AI and no Ollama. `core\settings.py` keeps the Step 3 setting names and the
+  quantity-source texts (used by `core\job.py`).
 - The hidden freight 1 / freight 2 / insurance prices can only be changed in the client profile.
 - Checked after the removal: BMS (6 trucks) and GCK (18 trucks) from the real samples give PDFs with the
   same text as before.
@@ -137,84 +140,36 @@ Things learned while building:
   copied unchanged, no font subsetting on them), `build_zip` (one folder per truck; modes "Documents
   only" and "Combined single PDF per truck"). `match_reports` is still there and tested, but the app
   no longer uses it.
-- `app.py`: section after Generate; uploader `on_change=save_report` writes the file; "Remove it"
-  deletes it. `st.session_state["reports"]` maps every made truck's invoice no. to the same report.
-  With no saved report the extra options are hidden.
+- `core\job.py`: `save_report` / `remove_report` / `report_info`; reports live in `data_dir()` as
+  `inspection_report_<CLIENT>.pdf`. The window's "Inspection report" card offers the only downloads (owner:
+  no documents-only ZIP): "Save ZIP" (combined PDF per truck) and one truck's "Documents" or "Combined".
+  With no saved report there is nothing to save.
 - Tests: `tests\test_inspection.py`.
 
 ## Design rules (UI)
-- All colours live in the `[theme]` block of `.streamlit\config.toml` (accent = `primaryColor`, plus
-  green / orange / red / gray for status). `core\ui.py` reads that block with `tomllib` and passes it
-  to the CSS as `--dl-*` variables. Never hard-code a colour anywhere else. Text contrast >= 4.5:1.
-- Offline only: system fonts (Segoe UI, Arial, sans-serif), inline SVG, Streamlit's bundled
-  `:material/...:` icons and emoji. No web fonts, CDN files or remote images.
-- `assets\style.css` is the only CSS file, loaded once by `ui.apply_style()`. Keep it short and use
-  `data-testid` selectors only. Prefer native components (bordered containers, `st.metric`, `st.badge`).
-- Each step is `st.container(border=True)` with `ui.step_header(...)` in an `st.empty()` slot: a number
-  while open, a green tick and a one-line summary when done.
-- Status is always icon + word (`ui.STATUS`), never colour alone. Max content width 1320 px, no page
-  scrolling sideways at 1366 px.
-- UI changes must never change logic, figures, widget keys or callbacks.
-- UI v1.6 (2026-10-20): progress tracker `ui.progress(progress_slot, steps_done)` under the client choice,
-  redrawn as each step completes (0-4); client radio shows each profile's `DESCRIPTION` as a caption;
-  the header ticker shows the active client, "Works offline" and the version (no Ollama status check
-  any more, so `app.py` no longer imports `core.llm`).
-- The Generate PDFs button (key `generate_pdfs`) uses the logo's cerulean #4CA8DC (`ui.COLORS["cerulean"]`,
-  the one colour kept outside config.toml) with dark text (5.8:1). Do NOT put it in the theme's blueColor:
-  that also colours the info boxes' text, which then fails contrast (3.7:1).
-- Uploaded files show a file icon chosen from the chip's aria-label (the file name Streamlit shows):
-  red PDF icon for ".pdf", green Excel icon for ".xls*". The brand colours (#E2231A, #217346) live only
-  inside those two inline SVG icons in style.css. Cosmetic only: file TYPE checks still use content.
-- Browser-tab icon: `assets\favicon.png`, a truck in the logo's cerulean #4CA8DC (box) and green
-  #84C440 (cab), set with `page_icon` in `app.py` (owner's request, 2026-10-16).
-- Cards: in Streamlit 1.65 a bordered `st.container(border=True)` is the `stVerticalBlock` directly inside a
-  `stLayoutWrapper` (the old `stVerticalBlockBorderWrapper` no longer exists). style.css targets
-  `[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:not(.st-key-summary_tiles)`; the summary
-  tiles' plain container has key `summary_tiles` so it is left out. Step cards get a navy left stripe, green
-  when done (`:has(.dl-step.dl-done)`). Upload boxes have a dashed navy outline; Streamlit's Deploy button
-  and top decoration are hidden.
-- UI v1.7 "modern" (2026-10-20): Windows 11 fonts (Segoe UI Variable), baseRadius 12px, header gradient
-  accent -> `ui.COLORS["accent2"]` #2A6AA3 (white text 5.7:1), rounder cards, the client radio styled as two
-  equal-height selectable cards (`.st-key-client [data-testid="stRadioGroup"] > div`, selected =
-  `[data-selected="true"]`, whole card clickable via a stretched label), pill-shaped buttons.
-  Note: the in-app test browser's simulated mouse clicks do not trigger Streamlit radios; check switching
-  with the keyboard (focus + ArrowRight) or AppTest `set_value`, which both work.
-- UI v1.8 (2026-10-20, owner's request): the look follows the Figma design "DocuLoop UI"
-  (https://www.figma.com/design/KMTzehAfWLeH1ElOeaEYoC, frame 4:2). Accent #2563EB, page #F7FAFF, text
-  #0F172A (config.toml); tints `soft`, `surface`, `line`, `muted`, `green_soft` and the hero gradient end
-  `accent2` #1D4ED8 are in `ui.COLORS` (backgrounds/lines only, `muted` 4.8:1 for small text). This replaces
-  the v1.6/v1.7 navy header band, ticker, left step stripes and old accent2 described above.
-  `ui.header()` draws the full-width white top bar (Tradesmart logo in a white tile, the name, and the
-  client/offline/version chips) and returns `hero_slot`; `ui.progress(progress_slot, steps_done, hero_slot)`
-  redraws the blue hero ("Step n" + step name tags and the tagline; owner removed the name "SmartAssist" from it) and the "Workflow" card.
-  Owner's changes to the design (2026-10-20): no tagline in the top bar, no chips and no logo in the hero
-  (the logo moved to the top bar), and the sample box's hint shows only "PDF" (CSS; the box still accepts
-  Excel files so it can say "use the other box"). The client radio's label is "Client selector". Icons from the design
-  are `assets\icons\*.svg`, embedded as data URIs by `ui._icon()`. Upload boxes put the Upload button on the
-  right with a bold title from CSS (`.st-key-pdf*`, `.st-key-xl*`, `inspection_upload*`). The design's font is
-  Inter, but the app keeps the offline Windows fonts (Segoe UI). The design's System / Dark mode /
-  Light mode buttons are NOT built yet.
-- Never write "<" in `assets\style.css` (not even in a comment): the page's safety filter then drops the
-  whole style. `tests\test_style.py` checks this.
-- Inspection report downloads offer only "Combined single PDF per truck" (owner's requests: the
-  separate-files option was removed 2026-10-14, "Documents only" 2026-10-16). No choice is shown.
-- Step 4 has no "Download everything (ZIP)" button any more (owner's request, 2026-10-20): the full ZIP
-  comes only from the inspection-report section. "Download one truck at a time" was removed too (same day);
-  Step 4 keeps only the preview.
-- The top-bar logo is a reload link (owner's request, 2026-10-20): `<a class="dl-mark" href="./"
-  target="_self">` in `ui.header()`; a click opens a fresh page (new session: uploads, results and client
-  choice are cleared, the splash shows again). Hover/focus ring in style.css.
+- All colours live in `assets\theme.toml`; `core\theme.py` reads them (`COLORS`, `FONT` = Segoe UI, `VERSION`).
+  Never hard-code a colour anywhere else. Text contrast >= 4.5:1. The look follows the Figma design
+  "DocuLoop UI" (https://www.figma.com/design/KMTzehAfWLeH1ElOeaEYoC, frame 4:2) as far as Tkinter allows
+  (square cards): white top bar (Tradesmart logo, name, client / offline / version chips), blue hero with
+  "Step n" + step-name tags and the tagline (no app name in it, owner's choice), Client selector cards,
+  Workflow tiles, numbered step cards, upload boxes with a "Choose file…" button.
+- Offline only: system fonts, the PNGs in `assets\` and emoji. Nothing downloaded at run time.
+- Status is always icon + word (`STATUS` in desktop_app.py), never colour alone.
+- The top-bar logo restarts SmartAssist (new Job, everything loaded is cleared; saved reports stay).
+- Generate PDFs button: the logo's cerulean #4CA8DC with dark text (5.8:1).
+- Window/taskbar icon `assets\favicon.png`; program icon `packaging\smartassist.ico` (made from it).
+- UI changes must never change logic, figures or the PDFs: those live in `core\`.
 
 ## Desktop version 2.0 (Tkinter, owner's request 2026-10-29)
-- The owner chose a Tkinter desktop window that will replace the browser version. For now BOTH exist (owner:
-  keep the Streamlit files until the desktop version has been used for real); `start_smartassist.bat` still
-  opens the browser version. Do not delete app.py / core\ui.py / style.css / .streamlit / brand_streamlit.py
-  without asking.
-- `core\job.py` (no screen code): the steps, rules and messages of app.py as a `Job` per client
+- The Tkinter window replaced the browser (Streamlit) version on 2026-10-29 (owner's request): app.py,
+  core\ui.py, assets\style.css, assets\icons, .streamlit, brand_streamlit.py and tests\test_style.py were
+  deleted (still in git history). The Streamlit Cloud app and the company repo's .devcontainer ran app.py
+  and no longer work. `start_smartassist.bat` opens the window with pythonw.
+- `core\job.py` (no screen code): the steps, rules and messages of the former app.py as a `Job` per client
   (load_sample, load_excel / choose_sheet / set_header_row / mapping, check, generate, inspection report,
   ZIP / combined). `data_dir()` = project `output\` from source, `%LOCALAPPDATA%\SmartAssist` in the .exe.
   `resource()` finds assets inside the .exe. Tests: `tests\test_job.py` (invented data).
-- `desktop_app.py`: the Tkinter window only (redraws from the Job's state, like a Streamlit rerun; Step 3
+- `desktop_app.py`: the Tkinter window only (redraws from the Job's state on every change; Step 3
   typing is checked 0.5 s after the last key; Generate runs in a thread). Colours only from
   `assets\theme.toml` via `core\theme.py` (VERSION "2.0"). Hidden test options: `SmartAssist.exe --check`
   (writes SmartAssist_check.txt to %TEMP%) and `--build <bms|gck> <sample> <excel> <folder>`.
@@ -224,22 +179,17 @@ Things learned while building:
 - Checked 2026-10-29: window, packed .exe and installed program all give PDFs with the same text as the
   browser version for the real BMS (6) and GCK (18) samples; installer 42.9 MB, installed 131 MB.
 
-## Streamlit notes
-- No `use_container_width`. Keep results in `st.session_state`. Every download button needs a unique key.
-
 ## Layout of the code
 - `core\excel_reader.py` header detection and reading; `core\trucks.py` column matching, parsing, validation.
 - `core\clients\` one profile per client (fields table, Excel columns, defaults); `core\pdf_builder.py` builds the PDFs.
-- `app.py` 4 steps: sample upload + layout check, Excel upload + column matching, job details + data check,
-  generate + downloads + preview.
+- `core\job.py` the 4 steps without screen code; `desktop_app.py` the window: sample + layout check, Excel +
+  column matching, job details + data check, generate + preview, inspection report + saving.
+- `packaging\` installer recipe (see "Desktop version 2.0").
 - `tests\` pytest with invented data only. The sample-regression test is skipped if the sample is absent.
 
 ## Scope and privacy
-- Work only in the project folder. `samples\` is read-only. Do not touch `.venv\`.
-  One exception (owner's OK, 2026-10-16): `brand_streamlit.py`, run by `start_smartassist.bat` at every start,
-  replaces Streamlit's `static\favicon.png` with `assets\favicon.png` and the `<title>` in `static\index.html`
-  with "SmartAssist", so the truck icon shows from the first moment. Originals are kept as
-  `*.streamlit-original` next to them. Nothing else in `.venv\` may be changed.
+- Work only in the project folder. `samples\` is read-only. Do not touch `.venv\` (except installing the
+  approved packages). Streamlit is still installed in `.venv\` but no longer used.
 - `samples\` and `output\` are git-ignored. Real driver names, passports and phone numbers must never
   appear in committed files or tests.
   Exception (owner's decision, 2026-10-14): the two clearance agents' names and numbers in
@@ -256,4 +206,5 @@ Things learned while building:
 - 60 trucks in under 60 seconds, each PDF exactly 3 pages.
 - Invoice total = sum of its four amounts for 40, 42 and 42.5 MT.
 - No replaced text overflows its cell, including a 30-character driver name.
-- pytest passes, `git status` shows no client data, `start_smartassist.bat` opens the app.
+- pytest passes, `git status` shows no client data, `start_smartassist.bat` opens the window, and
+  `packaging\build_installer.bat` makes an installer whose program passes `--check`.
