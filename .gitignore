@@ -10,3 +10,7 @@ __pycache__/
 
 # Streamlit local settings
 .streamlit/secrets.toml
+
+# Made by packaging/build_installer.bat (PyInstaller and Inno Setup)
+build/
+dist/

@@ -1,0 +1,21 @@
+# ALL SmartAssist desktop colours live here (core/theme.py reads this file). Same colours as the
+# Figma design "DocuLoop UI". Every text colour keeps a contrast of at least 4.5:1 on its background.
+[colors]
+accent = "#2563EB"        # bright blue (white text on it 5.2:1)
+accent2 = "#1D4ED8"       # darker blue: hero gradient end, blue chip text (white on it 6.7:1)
+page = "#F7FAFF"          # window background
+card = "#FFFFFF"          # cards
+text = "#0F172A"
+gray = "#475569"          # secondary text (7.6:1 on white)
+muted = "#64748B"         # small secondary text (4.8:1 on white)
+border = "#E2E8F0"        # card outlines
+line = "#CBD5E1"          # outlines of empty circles and white buttons
+soft = "#EFF6FF"          # selected card / step, blue chip, info messages
+surface = "#F8FAFC"       # upload box, table header
+green = "#15803D"         # ready / done
+green_soft = "#ECFDF3"    # the Offline chip, success messages
+orange = "#985800"        # warning
+orange_soft = "#FFF7E6"   # warning messages
+red = "#B42318"           # error
+red_soft = "#FEF3F2"      # error messages
+cerulean = "#4CA8DC"      # the Tradesmart logo's blue: only the Generate button (dark text on it 5.8:1)
