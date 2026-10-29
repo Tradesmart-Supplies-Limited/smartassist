@@ -84,13 +84,13 @@ def test_truck_without_report_still_gets_its_normal_pdf(template):
     results = {"files": [("XX-TEST-289.pdf", docs)], "jobs": [("XX-TEST-289.pdf", values)]}
     for mode in insp.MODES:
         archive = zipfile.ZipFile(io.BytesIO(insp.build_zip(results, {}, mode)))
-        assert archive.namelist() == ["XX-TEST-289/XX-TEST-289.pdf"]
-        assert archive.read("XX-TEST-289/XX-TEST-289.pdf") == docs
+        assert archive.namelist() == ["XX-TEST-289.pdf"]
+        assert archive.read("XX-TEST-289.pdf") == docs
 
 
 # ---------- ZIP ----------
 
-def test_zip_folders_and_names_for_each_mode(template):
+def test_zip_has_no_folders_and_names_for_each_mode(template):
     docs1, values1 = documents(template, TRUCKS[0])
     docs2, values2 = documents(template, TRUCKS[1])
     results = {"files": [("XX-TEST-288.pdf", docs1), ("XX-TEST-289.pdf", docs2)],
@@ -100,7 +100,7 @@ def test_zip_folders_and_names_for_each_mode(template):
     def names(mode):
         return sorted(zipfile.ZipFile(io.BytesIO(insp.build_zip(results, reports, mode))).namelist())
 
-    assert names(insp.MODE_DOCUMENTS) == ["XX-TEST-288/XX-TEST-288.pdf", "XX-TEST-289/XX-TEST-289.pdf"]
-    assert names(insp.MODE_COMBINED) == ["XX-TEST-288/XX-TEST-288_with_inspection.pdf",
-                                         "XX-TEST-289/XX-TEST-289.pdf"]
+    assert names(insp.MODE_DOCUMENTS) == ["XX-TEST-288.pdf", "XX-TEST-289.pdf"]
+    assert names(insp.MODE_COMBINED) == ["XX-TEST-288_with_inspection.pdf", "XX-TEST-289.pdf"]
+    assert all("/" not in name for name in names(insp.MODE_COMBINED))     # every PDF sits directly in the ZIP
     assert insp.MODES == [insp.MODE_COMBINED]          # "Documents only" is no longer offered

@@ -10,7 +10,7 @@ SmartAssist is a normal Windows program (a desktop window). It works on this com
 is sent to the internet, and every figure is copied from the Excel or calculated by the program.
 
 ## Installing it on a laptop (once)
-1. Copy `SmartAssist_Setup_2.0.exe` to the laptop (shared folder, USB stick or a private link) and
+1. Copy the installer (for example `SmartAssist_Setup_2.1.exe`) to the laptop (shared folder, USB stick or a private link) and
    double-click it.
 2. If Windows says "Windows protected your PC": click **More info → Run anyway** (the program is not
    digitally signed).
@@ -78,8 +78,9 @@ The inspection report is the same for every truck, so you choose it **once**:
    "Saved inspection report" from then on, also after closing SmartAssist.
 2. Only when the client sends a new report: click **Replace it** and choose the new one.
    **Remove it** stops adding a report.
-3. After **Generate PDFs**: **Save ZIP** gives one folder per truck with one combined PDF (the 3 pages,
-   then the report). **Save one truck** gives one truck's **Documents** (3 pages) or **Combined** PDF.
+3. After **Generate PDFs**: **Save ZIP** gives one ZIP with one combined PDF per truck (the 3 pages,
+   then the report), all directly in the ZIP with no folders, e.g. `BMS_YS-BMS10-288_with_inspection.pdf`.
+   **Save one truck** gives one truck's **Documents** (3 pages) or **Combined** PDF.
    You pick the folder; Downloads is suggested.
 The report itself is never changed: its pages are copied as they are. Without a saved report there is
 nothing to save, so keep each client's report saved.
@@ -124,7 +125,7 @@ The same horse used twice; empty passport number; empty exit border.
 
 **Making the installer:** double-click `packaging\build_installer.bat`. It runs the checks, packs
 SmartAssist with its own Python (PyInstaller), checks the packed program and makes
-`dist\SmartAssist_Setup_2.0.exe`. Needs, on that PC only: `.venv\Scripts\python -m pip install -r
+`dist\SmartAssist_Setup_<version>.exe`. Needs, on that PC only: `.venv\Scripts\python -m pip install -r
 requirements-build.txt` and Inno Setup 6 (`winget install --id JRSoftware.InnoSetup --scope user`).
 
 The sample PDF and the Excel are not part of the program: bring them yourself and choose them in the window.
