@@ -11,6 +11,8 @@ One wrong number can delay an OGEFREM customs declaration, so correctness comes 
 ## Environment
 - Windows, `C:\Projects\DocuLoop`, Python 3.12 in `.venv`, 8 GB RAM, no GPU, no internet at run time.
 - Allowed packages only: streamlit, pandas, openpyxl, pymupdf, fonttools, pytest. Ask before adding any other.
+  Build-only (owner's OK, 2026-10-29): pyinstaller (`requirements-build.txt`) and Inno Setup 6 (installed for the
+  user via winget) make the desktop installer; neither is needed to run SmartAssist.
 - Run the app: `start_smartassist.bat`. Run the tests: `.venv\Scripts\python -m pytest`.
 
 ## Inputs
@@ -202,6 +204,25 @@ Things learned while building:
 - The top-bar logo is a reload link (owner's request, 2026-10-20): `<a class="dl-mark" href="./"
   target="_self">` in `ui.header()`; a click opens a fresh page (new session: uploads, results and client
   choice are cleared, the splash shows again). Hover/focus ring in style.css.
+
+## Desktop version 2.0 (Tkinter, owner's request 2026-10-29)
+- The owner chose a Tkinter desktop window that will replace the browser version. For now BOTH exist (owner:
+  keep the Streamlit files until the desktop version has been used for real); `start_smartassist.bat` still
+  opens the browser version. Do not delete app.py / core\ui.py / style.css / .streamlit / brand_streamlit.py
+  without asking.
+- `core\job.py` (no screen code): the steps, rules and messages of app.py as a `Job` per client
+  (load_sample, load_excel / choose_sheet / set_header_row / mapping, check, generate, inspection report,
+  ZIP / combined). `data_dir()` = project `output\` from source, `%LOCALAPPDATA%\SmartAssist` in the .exe.
+  `resource()` finds assets inside the .exe. Tests: `tests\test_job.py` (invented data).
+- `desktop_app.py`: the Tkinter window only (redraws from the Job's state, like a Streamlit rerun; Step 3
+  typing is checked 0.5 s after the last key; Generate runs in a thread). Colours only from
+  `assets\theme.toml` via `core\theme.py` (VERSION "2.0"). Hidden test options: `SmartAssist.exe --check`
+  (writes SmartAssist_check.txt to %TEMP%) and `--build <bms|gck> <sample> <excel> <folder>`.
+- `packaging\`: `make_icon.py` (PNG-in-ICO, no Pillow), `smartassist.spec` (PyInstaller one-folder, excludes
+  streamlit/pyarrow), `installer.iss` (per-user install, no admin), `build_installer.bat` (tests -> icon ->
+  pack -> --check -> installer). Output `dist\` and `build\` are git-ignored.
+- Checked 2026-10-29: window, packed .exe and installed program all give PDFs with the same text as the
+  browser version for the real BMS (6) and GCK (18) samples; installer 42.9 MB, installed 131 MB.
 
 ## Streamlit notes
 - No `use_container_width`. Keep results in `st.session_state`. Every download button needs a unique key.
